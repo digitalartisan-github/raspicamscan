@@ -2,9 +2,9 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace ConsoleApp1
+namespace NewSyncShooter
 {
-	public class MultiCastClient
+	internal class MultiCastClient
 	{
 		public MultiCastClient( string mcastGroup, int mcastPort )
 		{

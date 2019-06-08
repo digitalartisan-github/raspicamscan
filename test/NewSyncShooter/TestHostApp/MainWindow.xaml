@@ -1,0 +1,25 @@
+﻿<Window x:Class="TestHostApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TestHostApp"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <ToolBarTray Grid.Row="1">
+            <ToolBar>
+                <Button Content="カメラ検索" Name="ButtonConnectCamera" Click="ButtonConnectCamera_Click"/>
+                <Button Content="プレビュー" Name="ButtonPreview"/>
+                <Button Content="カメラ設定" Name="ButtonCameraSetting"/>
+                <Button Content="撮影" Name="ButtonCapture"/>
+                <Button Content="カメラ停止" Name="ButtonStopCamera" Click="ButtonStopCamera_Click"/>
+                <Button Content="カメラ再起動" Name="ButtonRebootCamera" Click="ButtonRebootCamera_Click"/>
+            </ToolBar>
+            <ToolBar>
+                <Button Content="表示画像" />
+                <Button Content="ネットワーク" />
+            </ToolBar>
+        </ToolBarTray>
+    </Grid>
+</Window>

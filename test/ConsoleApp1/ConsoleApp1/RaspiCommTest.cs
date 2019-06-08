@@ -18,55 +18,33 @@ namespace ConsoleApp1
 		private static readonly int SENDBACK_PORT = 27782;
 		private static readonly int SHOOTIMAGESERVER_PORT = 27783;
 
-		// UDP マルチキャストを開く
-		static bool OpenMultiCast(out UdpClient mcastClient, out IPEndPoint mcastPoint )
-		{
-			mcastClient = null;
-			mcastPoint = null;
-			try {
-				mcastClient = new UdpClient();
-				mcastPoint = new IPEndPoint( IPAddress.Parse( MCAST_GRP ), MCAST_PORT );
-				mcastClient.JoinMulticastGroup( mcastPoint.Address );
-			} catch (Exception e) {
-				Console.Error.WriteLine( e.InnerException );
-				return false;
-			}
-			return true;
-		}
-
-		// マルチキャストに参加しているラズパイにコマンドを送信
-		static bool SendCommand_MultiCast( ref UdpClient mcastClient, ref IPEndPoint mcastPoint, string cmd )
-		{
-			try {
-				byte[] sendBytes = System.Text.Encoding.UTF8.GetBytes( cmd );
-				mcastClient.Send( sendBytes, sendBytes.Length, mcastPoint );
-			} catch ( Exception e ) {
-				Console.Error.WriteLine( e.InnerException );
-				return false;
-			}
-			return true;
-		}
-
 		// 接続しているラズパイのアドレスとポートを列挙する
-		static Dictionary<IPAddress, int> GetConectedHostAddress( ref UdpClient mcastClient, ref IPEndPoint mcastPoint )
+		static Dictionary<IPAddress, int> GetConectedHostAddress( MultiCastClient mcastClient )
 		{
 			UdpClient udp = new UdpClient( SENDBACK_PORT );
+			udp.Client.ReceiveTimeout = 1000;
 
 			// マルチキャストに参加しているラズパイに"INQ"コマンドを送信
-			SendCommand_MultiCast( ref mcastClient, ref mcastPoint, "INQ" );
+			mcastClient.SendCommand( "INQ" );
 
 			var mapIPvsPort = new Dictionary<IPAddress, int>();
-			do {
-				// 任意IP Address, 任意のポートからデータを受信する 
-				IPEndPoint remoteEP = null;
-				byte[] rcvBytes = udp.Receive( ref remoteEP );
-				string rcvMsg = System.Text.Encoding.UTF8.GetString( rcvBytes );
-				if ( rcvMsg == "ACK" ) {
-					Console.WriteLine( "受信したデータ:{0}", rcvMsg );
-					Console.WriteLine( "送信元アドレス:{0}/ポート番号:{1}", remoteEP.Address, remoteEP.Port );  // この送信元ポート番号は毎度変わる
-					mapIPvsPort[remoteEP.Address] = remoteEP.Port;
-				}
-			} while ( udp.Available > 0 );
+			try {
+				do {
+					// 任意IP Address, 任意のポートからデータを受信する 
+					IPEndPoint remoteEP = null;
+					byte[] rcvBytes = udp.Receive( ref remoteEP );
+					string rcvMsg = System.Text.Encoding.UTF8.GetString( rcvBytes );
+					if ( rcvMsg == "ACK" ) {
+						Console.WriteLine( "受信したデータ:{0}", rcvMsg );
+						Console.WriteLine( "送信元アドレス:{0}/ポート番号:{1}", remoteEP.Address, remoteEP.Port );  // この送信元ポート番号は毎度変わる
+						mapIPvsPort[remoteEP.Address] = remoteEP.Port;
+					}
+				} while ( udp.Available > 0 );
+			} catch ( Exception e ) {
+				Console.Error.WriteLine( e.Message );
+				udp.Close();
+				return mapIPvsPort;
+			}
 			udp.Close();
 			return mapIPvsPort;
 		}
@@ -102,12 +80,17 @@ namespace ConsoleApp1
 			defs.Serialize( @"..\..\syncshooterDefs_copy.json" );
 
 			// UDP マルチキャストを開く
-			OpenMultiCast( out UdpClient mcastClient, out IPEndPoint mcastPoint );
+			MultiCastClient mcastClient = new MultiCastClient( MCAST_GRP, MCAST_PORT );
+			if ( mcastClient.Open() == false ) {
+				return;
+			}
+			//mcastClient.SendCommand( "SDW" );	// TEST
 
 			// 接続しているラズパイのアドレスとポートを列挙する
-			var mapIPvsPort = GetConectedHostAddress( ref mcastClient, ref mcastPoint );
+			var mapIPvsPort = GetConectedHostAddress( mcastClient );
 
 			// Camera parameter を取得する
+			Console.Error.WriteLine( "Get and save camera parameters..." );
 			foreach ( var pair in mapIPvsPort ) {
 				IPAddress adrs = pair.Key;
 				string text = GetCameraParameterInJson( adrs.ToString() );
@@ -118,6 +101,7 @@ namespace ConsoleApp1
 			}
 
 			// Preview image の取得
+			Console.Error.WriteLine( "Previewing..." );
 			foreach ( var pair in mapIPvsPort ) {
 				IPAddress adrs = pair.Key;
 				TcpClient tcp = new TcpClient( adrs.ToString(), SHOOTIMAGESERVER_PORT );
@@ -163,8 +147,8 @@ namespace ConsoleApp1
 			//
 			// Full image (JPG) の取得
 			// Multicast で 撮影コマンドを送信
-			SendCommand_MultiCast( ref mcastClient,ref  mcastPoint, "SHJ" );
-
+			mcastClient.SendCommand( "SHJ" );
+			Console.Error.WriteLine( "Capturing JPEG..." );
 			// Full image の取得
 			foreach ( var pair in mapIPvsPort ) {
 				IPAddress adrs = pair.Key;
