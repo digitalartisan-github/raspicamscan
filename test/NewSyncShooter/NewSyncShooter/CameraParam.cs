@@ -18,11 +18,15 @@ namespace NewSyncShooter
 		public double wb_gb { get; set; }
 		public double wb_rg { get; set; }
 
+		public static CameraParam DecodeFronJsonText( string jsonStr )
+		{
+			return JsonConvert.DeserializeObject<CameraParam>( jsonStr );
+		}
+
 		public static CameraParam Deserialize( string path )
 		{
-			var jsonStr = File.ReadAllText( path );
-			var param = JsonConvert.DeserializeObject<CameraParam>( jsonStr );
-			return param;
+			var jsonText = File.ReadAllText( path );
+			return DecodeFronJsonText( jsonText );
 		}
 
 		public void Serialize( string path )

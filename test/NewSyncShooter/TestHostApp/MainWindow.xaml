@@ -10,9 +10,9 @@
         <ToolBarTray Grid.Row="1">
             <ToolBar>
                 <Button Content="カメラ検索" Name="ButtonConnectCamera" Click="ButtonConnectCamera_Click"/>
-                <Button Content="プレビュー" Name="ButtonPreview"/>
                 <Button Content="カメラ設定" Name="ButtonCameraSetting"/>
-                <Button Content="撮影" Name="ButtonCapture"/>
+                <Button Content="プレビュー" Name="ButtonPreview" Click="ButtonPreview_Click"/>
+                <Button Content="撮影" Name="ButtonCapture" Click="ButtonCapture_Click"/>
                 <Button Content="カメラ停止" Name="ButtonStopCamera" Click="ButtonStopCamera_Click"/>
                 <Button Content="カメラ再起動" Name="ButtonRebootCamera" Click="ButtonRebootCamera_Click"/>
             </ToolBar>
