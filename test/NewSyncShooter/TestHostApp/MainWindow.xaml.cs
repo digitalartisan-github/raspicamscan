@@ -45,8 +45,6 @@ namespace TestHostApp
 				foreach ( var adrs in connectedArray ) {
 					dlg.ListBox_Connected.Items.Add( adrs );
 					_connectedIPAddressList.Add( adrs );
-					// TEST: getting camera parameters
-					var param = _newSyncShooter.GetCameraParam( adrs );
 				}
 
 				// SyncshooterDefs にあるIP Addressの中に接続できたカメラがない場合は、そのアドレスの一覧を表示する
@@ -61,14 +59,15 @@ namespace TestHostApp
 			}
 		}
 
-		private void ButtonStopCamera_Click( object sender, RoutedEventArgs e )
+		private void ButtonCameraSetting_Click( object sender, RoutedEventArgs e )
 		{
-			_newSyncShooter.StopCamera( false );
-		}
-
-		private void ButtonRebootCamera_Click( object sender, RoutedEventArgs e )
-		{
-			_newSyncShooter.StopCamera( true );
+			// TEST
+			_connectedIPAddressList.ForEach( adrs =>
+			{
+				var param = _newSyncShooter.GetCameraParam( adrs );
+				param.Orientation = 1;
+				_newSyncShooter.SetCameraParam( adrs, param );
+			} );
 		}
 
 		private void ButtonPreview_Click( object sender, RoutedEventArgs e )
@@ -77,7 +76,7 @@ namespace TestHostApp
 				byte[] data = _newSyncShooter.GetPreviewImage(adrs);
 				String path = string.Format( "preview_{0}.bmp", adrs.ToString() );
 				using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-					fs.Write( data, 4, (int) data.Length - 4 );
+					fs.Write( data, 0, (int) data.Length );
 				}
 			}
 		}
@@ -90,11 +89,22 @@ namespace TestHostApp
 				byte[] data = _newSyncShooter.GetFullImageInJpeg(adrs);
 				String path = string.Format( "full_{0}.jpg", adrs.ToString() );
 				using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-					fs.Write( data, 4, (int) data.Length - 4 );
+					fs.Write( data, 0, (int) data.Length );
 				}
 			} );
 			TimeSpan ts = DateTime.Now - t;
-			MessageBox.Show( ts.ToString("ss\\.fff") + "[sec]" );
+			MessageBox.Show( ts.ToString("s\\.fff") + "[sec]" );
 		}
+
+		private void ButtonStopCamera_Click( object sender, RoutedEventArgs e )
+		{
+			_newSyncShooter.StopCamera( false );
+		}
+
+		private void ButtonRebootCamera_Click( object sender, RoutedEventArgs e )
+		{
+			_newSyncShooter.StopCamera( true );
+		}
+
 	}
 }

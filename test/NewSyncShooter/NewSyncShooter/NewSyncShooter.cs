@@ -57,9 +57,8 @@ namespace NewSyncShooter
 			if ( _mcastClient.Open() == false ) {
 				return Array.Empty<string>();
 			}
-			// 接続できたラズパイのアドレスとポートを列挙する
-			_mapIP_Port = GetConnectedHostAddress( _mcastClient );
-			return _mapIP_Port.Select( pair => { return pair.Key.ToString(); } );
+			// 接続できたラズパイのアドレスを列挙する
+			return GetConnectedHostAddress();
 		}
 
 		// 指定IPアドレスのカメラのパラメータを取得する
@@ -84,7 +83,7 @@ namespace NewSyncShooter
 				string rcvString = System.Text.Encoding.UTF8.GetString( rcvBytes );
 				tcp.Close();
 
-				return CameraParam.DecodeFronJsonText( rcvString );
+				return CameraParam.DecodeFromJsonText( rcvString );
 			} catch ( Exception e ) {
 				Console.Error.WriteLine( e.Message );
 				return null;
@@ -94,7 +93,35 @@ namespace NewSyncShooter
 		// 指定IPアドレスのカメラにパラメータを設定する
 		public void SetCameraParam( string ipAddress, CameraParam param )
 		{
+			try {
+				TcpClient tcp = new TcpClient( ipAddress, SHOOTIMAGESERVER_PORT );
+				System.Net.Sockets.NetworkStream ns = tcp.GetStream();
+				ns.ReadTimeout = 10000;
+				ns.WriteTimeout = 10000;
 
+				// set parameter コマンドを送信
+				string cmd = "PST";
+				byte[] cmdBytes = System.Text.Encoding.UTF8.GetBytes( cmd );
+				ns.Write( cmdBytes, 0, cmdBytes.Length );
+
+				// "ACK"データを受信
+				while ( tcp.Client.Available == 0 ) {
+				}
+				byte[] rcvBytes = new byte[tcp.Client.Available];
+				ns.Read( rcvBytes, 0, tcp.Client.Available );
+				string rcvString = System.Text.Encoding.UTF8.GetString( rcvBytes );
+				if ( rcvString != "ACK") {
+					return;
+				}
+
+				// parameter を送信
+				var jsonText = param.EncodeToJsonText();
+				cmdBytes = System.Text.Encoding.UTF8.GetBytes( jsonText );
+				ns.Write( cmdBytes, 0, cmdBytes.Length );
+
+			} catch ( Exception e ) {
+				Console.Error.WriteLine( e.Message );
+			}
 		}
 
 		// 指定IPアドレスのカメラのプレビュー画像データを取得する
@@ -122,16 +149,16 @@ namespace NewSyncShooter
 				if ( sum == 0 ) {
 					// 先頭の4バイトには、次に続くデータのサイズが書かれている
 					bytes_to_read = ( (ulong) rcvBytes[0] ) | ( (ulong) rcvBytes[1] << 8 ) | ( (ulong) rcvBytes[2] << 16 ) | ( (ulong) rcvBytes[3] << 24 );
-					Console.WriteLine( "bytes_to_read = {0}", bytes_to_read );
+					Console.Error.WriteLine( "bytes_to_read = {0}", bytes_to_read );
 				}
 				sum += (ulong) resSize;
 				ms.Write( rcvBytes, 0, resSize );
 			} while ( sum < bytes_to_read + 4 );
-			Console.WriteLine( "size = {0}", (int) sum - 4 );
+			//Console.Error.WriteLine( "size = {0}", (int) sum - 4 );
 			ms.Close();
 			ns.Close();
 			tcp.Close();
-			return ms.GetBuffer();
+			return ms.GetBuffer().Skip(4).ToArray();
 		}
 
 		public byte[] GetFullImageInJpeg(string ipAddress)
@@ -159,16 +186,16 @@ namespace NewSyncShooter
 				if ( sum == 0 ) {
 					// 先頭の4バイトには、次に続くデータのサイズが書かれている
 					bytes_to_read = ( (ulong) rcvBytes[0] ) | ( (ulong) rcvBytes[1] << 8 ) | ( (ulong) rcvBytes[2] << 16 ) | ( (ulong) rcvBytes[3] << 24 );
-					Console.WriteLine( "bytes_to_read = {0}", bytes_to_read );
+					Console.WriteLine( "{0}: bytes_to_read = {1}", ipAddress, bytes_to_read );
 				}
 				sum += (ulong) resSize;
 				ms.Write( rcvBytes, 0, resSize );
 			} while ( sum < bytes_to_read + 4 );
-			Console.WriteLine( "size = {0}", (int) sum - 4 );
+			//Console.WriteLine( "size = {0}", (int) sum - 4 );
 			ms.Close();
 			ns.Close();
 			tcp.Close();
-			return ms.GetBuffer();
+			return ms.GetBuffer().Skip(4).ToArray();
 		}
 
 		// カメラを停止する
@@ -181,14 +208,14 @@ namespace NewSyncShooter
 			}
 		}
 
-		// 接続しているラズパイのアドレスとポートを列挙する
-		private Dictionary<string, int> GetConnectedHostAddress( MultiCastClient mcastClient )
+		// 接続しているラズパイのアドレスを列挙する（アドレスの第4オクテットの昇順でソート）
+		private IEnumerable<string> GetConnectedHostAddress()
 		{
 			UdpClient udp = new UdpClient( SENDBACK_PORT );
 			udp.Client.ReceiveTimeout = 1000;
 
 			// マルチキャストに参加しているラズパイに"INQ"コマンドを送信
-			mcastClient.SendCommand( "INQ" );
+			_mcastClient.SendCommand( "INQ" );
 			System.Threading.Thread.Sleep( 1000 );	// waitをおかないと、この後すぐに返事を受け取れない場合がある
 
 			var mapIPvsPort = new Dictionary<string, int>();
@@ -199,18 +226,24 @@ namespace NewSyncShooter
 					byte[] rcvBytes = udp.Receive( ref remoteEP );
 					string rcvMsg = System.Text.Encoding.UTF8.GetString( rcvBytes );
 					if ( rcvMsg == "ACK" ) {
-						Console.WriteLine( "受信したデータ:{0}", rcvMsg );
-						Console.WriteLine( "送信元アドレス:{0}/ポート番号:{1}", remoteEP.Address.ToString(), remoteEP.Port );  // この送信元ポート番号は毎度変わる
+						Console.Error.WriteLine( "送信元アドレス:{0}/ポート番号:{1}", remoteEP.Address.ToString(), remoteEP.Port );  // この送信元ポート番号は毎度変わる
 						mapIPvsPort[remoteEP.Address.ToString()] = remoteEP.Port;
 					}
 				} while ( udp.Available > 0 );
 			} catch (Exception e) {
 				Console.Error.WriteLine( e.Message );
 				udp.Close();
-				return mapIPvsPort;
+				return Array.Empty<string>();
 			}
 			udp.Close();
-			return mapIPvsPort;
+
+			// アドレスの第4オクテットの昇順でソート
+			return mapIPvsPort.OrderBy( pair =>
+			{
+				int idx = pair.Key.LastIndexOf('.');
+				int adrs4th = int.Parse(pair.Key.Substring( idx  + 1 ));
+				return adrs4th;
+			} ).Select( pair => pair.Key );
 		}
 
 	}

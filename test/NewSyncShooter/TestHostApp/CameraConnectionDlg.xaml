@@ -7,9 +7,9 @@
         mc:Ignorable="d"
         Title="Camera Connection" Height="auto" Width="250" WindowStyle="ToolWindow" ResizeMode="NoResize" SizeToContent="Height">
     <StackPanel Margin="4">
-        <Label Margin="2" Content="Connected:"/>
+        <Label Margin="4,4,4,0" Content="Connected:"/>
         <ListBox Name="ListBox_Connected" Height="150" Margin="4"/>
-        <Label Margin="2" Content="Not Connected:"/>
+        <Label Margin="4,4,4,0" Content="Not Connected:"/>
         <ListBox Name="ListBox_NotConnected" Height="150" Margin="4"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Name="Button_OK" Height="24" Content="OK" Width="48" Margin="4" Click="Button_OK_Click"/>

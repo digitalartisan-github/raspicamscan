@@ -19,6 +19,7 @@ namespace NewSyncShooter
 		// IP Address の一覧を列挙する
 		public IEnumerable<string> GetAllCameraIPAddress()
 		{
+			// TODO: IP Address の第4オクテットの昇順でソートする
 			string sFormat = ip_template;
 			if ( string.IsNullOrEmpty( sFormat ) == false ) {
 				int index = sFormat.LastIndexOf(".%d");
