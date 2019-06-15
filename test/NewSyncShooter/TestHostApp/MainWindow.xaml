@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TestHostApp"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="640" Width="1048">
     <Grid>
         <ToolBarTray Grid.Row="1">
             <ToolBar>
@@ -17,7 +17,14 @@
                 <Button Content="カメラ再起動" Name="ButtonRebootCamera" Click="ButtonRebootCamera_Click"/>
             </ToolBar>
             <ToolBar>
-                <Button Content="表示画像" />
+                <Menu>
+                    <MenuItem Header="表示画像">
+                        <MenuItem Header="正面カメラ"/>
+                        <MenuItem Header="背面カメラ"/>
+                        <MenuItem Header="右側カメラ"/>
+                        <MenuItem Header="左側カメラ"/>
+                    </MenuItem>
+                </Menu> 
                 <Button Content="ネットワーク" />
             </ToolBar>
         </ToolBarTray>

@@ -19,7 +19,17 @@ namespace NewSyncShooter
 		// IP Address の一覧を列挙する
 		public IEnumerable<string> GetAllCameraIPAddress()
 		{
-			// TODO: IP Address の第4オクテットの昇順でソートする
+			return GetAllCameraIPAddressRaw().OrderBy( adrs =>
+			{
+				// IP Address の第4オクテットの昇順でソートする
+				int idx = adrs.LastIndexOf('.');
+				int adrs4th = int.Parse(adrs.Substring( idx  + 1 ));
+				return adrs4th;
+			} );
+		}
+
+		private IEnumerable<string> GetAllCameraIPAddressRaw()
+		{
 			string sFormat = ip_template;
 			if ( string.IsNullOrEmpty( sFormat ) == false ) {
 				int index = sFormat.LastIndexOf(".%d");

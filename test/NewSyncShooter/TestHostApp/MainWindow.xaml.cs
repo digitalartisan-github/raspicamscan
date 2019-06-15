@@ -36,27 +36,44 @@ namespace TestHostApp
 
 		private void ButtonConnectCamera_Click( object sender, RoutedEventArgs e )
 		{
+#if true
 			var connectedArray = _newSyncShooter.ConnectCamera().ToArray();
-			if ( connectedArray.ToArray().Length == 0 ) {
-				MessageBox.Show( "No camera connected.", "Camera Connection" );
-			} else {
-				CameraConnectionDlg dlg = new CameraConnectionDlg();
-				_connectedIPAddressList.Clear();
-				foreach ( var adrs in connectedArray ) {
-					dlg.ListBox_Connected.Items.Add( adrs );
-					_connectedIPAddressList.Add( adrs );
-				}
-
-				// SyncshooterDefs にあるIP Addressの中に接続できたカメラがない場合は、そのアドレスの一覧を表示する
-				var allArray = _newSyncShooter.GetSyncshooterDefs().GetAllCameraIPAddress().ToArray();
-				var exceptArray = allArray.Except(connectedArray).ToArray();
-				if ( exceptArray.Length > 0 ) {
-					foreach (var adrs in exceptArray ) {
-						dlg.ListBox_NotConnected.Items.Add( adrs );
-					}
-				}
-				dlg.ShowDialog();
+			CameraConnectionDlg dlg = new CameraConnectionDlg();
+			_connectedIPAddressList.Clear();
+			foreach ( var adrs in connectedArray ) {
+				dlg.ListBox_Connected.Items.Add( adrs );
+				_connectedIPAddressList.Add( adrs );
 			}
+
+			// SyncshooterDefs にあるIP Addressの中に接続できたカメラがない場合は、そのアドレスの一覧を表示する
+			var allArray = _newSyncShooter.GetSyncshooterDefs().GetAllCameraIPAddress().ToArray();
+			var exceptArray = allArray.Except(connectedArray).ToArray();
+			if ( exceptArray.Length > 0 ) {
+				foreach (var adrs in exceptArray ) {
+					dlg.ListBox_NotConnected.Items.Add( adrs );
+				}
+			}
+			dlg.ShowDialog();
+#else
+			var allArray = _newSyncShooter.GetSyncshooterDefs().GetAllCameraIPAddress();
+			var connectedArray = _newSyncShooter.GetConnectedHostAddress(allArray).ToArray();
+
+			CameraConnectionDlg dlg = new CameraConnectionDlg();
+			_connectedIPAddressList.Clear();
+			foreach ( var adrs in connectedArray ) {
+				dlg.ListBox_Connected.Items.Add( adrs );
+				_connectedIPAddressList.Add( adrs );
+			}
+
+			// SyncshooterDefs にあるIP Addressの中に接続できたカメラがない場合は、そのアドレスの一覧を表示する
+			var exceptArray = allArray.Except(connectedArray).ToArray();
+			if ( exceptArray.Length > 0 ) {
+				foreach ( var adrs in exceptArray ) {
+					dlg.ListBox_NotConnected.Items.Add( adrs );
+				}
+			}
+			dlg.ShowDialog();
+#endif
 		}
 
 		private void ButtonCameraSetting_Click( object sender, RoutedEventArgs e )
