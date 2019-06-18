@@ -13,13 +13,13 @@ namespace NewSyncShooter
 		// マルチキャストグループのIPアドレスとポート
 		// （syncshooter.py 中の MCAST_GRP, MCAST_PORT に対応）
 		private static readonly string MCAST_GRP = "239.2.1.1";
-		private static readonly int MCAST_PORT = 27781;
-		private static readonly int SENDBACK_PORT = 27782;
-		private static readonly int SHOOTIMAGESERVER_PORT = 27783;
+		private static readonly int MCAST_PORT = 27781;					// マルチキャスト送信ポート
+		private static readonly int SENDBACK_PORT = 27782;				// マルチキャストでラズパイからの返信ポート
+		private static readonly int SHOOTIMAGESERVER_PORT = 27783;		// ラズパイからの画像返信用ポート
 
-		SyncshooterDefs _syncshooterDefs;
-		MultiCastClient _mcastClient;
-		Dictionary<string, int> _mapIP_Port;
+		private SyncshooterDefs _syncshooterDefs;
+		private MultiCastClient _mcastClient;
+		private Dictionary<string, int> _mapIP_Port;
 
 		public NewSyncShooter()
 		{
@@ -160,6 +160,39 @@ namespace NewSyncShooter
 			ns.Close();
 			tcp.Close();
 			return ms.GetBuffer().Skip(4).ToArray();
+		}
+
+		public byte[] GetPreviewImageFront()
+		{
+			if (_syncshooterDefs.front_camera == -1 ) {
+				return Array.Empty<byte>();
+			} else {
+				return GetPreviewImage( _syncshooterDefs.FrontCameraAddress );
+			}
+		}
+		public byte[] GetPreviewImageBack()
+		{
+			if ( _syncshooterDefs.back_camera == -1 ) {
+				return Array.Empty<byte>();
+			} else {
+				return GetPreviewImage( _syncshooterDefs.BackCameraAddress );
+			}
+		}
+		public byte[] GetPreviewImageRight()
+		{
+			if ( _syncshooterDefs.right_camera == -1 ) {
+				return Array.Empty<byte>();
+			} else {
+				return GetPreviewImage( _syncshooterDefs.RightCameraAddress );
+			}
+		}
+		public byte[] GetPreviewImageLeft()
+		{
+			if ( _syncshooterDefs.left_camera == -1 ) {
+				return Array.Empty<byte>();
+			} else {
+				return GetPreviewImage( _syncshooterDefs.LeftCameraAddress );
+			}
 		}
 
 		public byte[] GetFullImageInJpeg(string ipAddress)

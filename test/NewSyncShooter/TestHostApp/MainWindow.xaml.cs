@@ -110,7 +110,7 @@ namespace TestHostApp
 				}
 			} );
 			TimeSpan ts = DateTime.Now - t;
-			MessageBox.Show( ts.ToString("s\\.fff") + "[sec]" );
+			MessageBox.Show( ts.ToString("s\\.fff") + " sec", "Capture", MessageBoxButton.OK, MessageBoxImage.Information );
 		}
 
 		private void ButtonStopCamera_Click( object sender, RoutedEventArgs e )
@@ -123,5 +123,68 @@ namespace TestHostApp
 			_newSyncShooter.StopCamera( true );
 		}
 
+		private void ButtonFrontCamera_Click( object sender, RoutedEventArgs e )
+		{
+			byte[] data = _newSyncShooter.GetPreviewImageFront();
+			if ( data.Length > 0 ) {
+				// bitmap を表示
+				ShowPreviewImage( data );
+				String path = string.Format( @".\preview_front.bmp" );
+				using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+					fs.Write( data, 0, (int) data.Length );
+				}
+			}
+		}
+
+		private void ButtonBackCamera_Click( object sender, RoutedEventArgs e )
+		{
+			byte[] data = _newSyncShooter.GetPreviewImageBack();
+			if ( data.Length > 0 ) {
+				// bitmap を表示
+				ShowPreviewImage( data );
+				String path = string.Format( @".\preview_back.bmp" );
+				using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+					fs.Write( data, 0, (int) data.Length );
+				}
+			}
+		}
+
+		private void ButtonRightCamera_Click( object sender, RoutedEventArgs e )
+		{
+			byte[] data = _newSyncShooter.GetPreviewImageRight();
+			if ( data.Length > 0 ) {
+				// bitmap を表示
+				ShowPreviewImage( data );
+				String path = string.Format( @".\preview_right.bmp" );
+				using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+					fs.Write( data, 0, (int) data.Length );
+				}
+			}
+		}
+
+		private void ButtonLeftCamera_Click( object sender, RoutedEventArgs e )
+		{
+			byte[] data = _newSyncShooter.GetPreviewImageLeft();
+			if ( data.Length > 0 ) {
+				// bitmap を表示
+				ShowPreviewImage( data );
+				String path = string.Format( @".\preview_left.bmp" );
+				using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+					fs.Write( data, 0, (int) data.Length );
+				}
+			}
+		}
+
+		private void ShowPreviewImage( byte[] data )
+		{
+			MemoryStream ms = new MemoryStream( data );
+			System.Windows.Media.Imaging.BitmapSource bitmapSource =
+						System.Windows.Media.Imaging.BitmapFrame.Create(
+							ms,
+							System.Windows.Media.Imaging.BitmapCreateOptions.None,
+							System.Windows.Media.Imaging.BitmapCacheOption.OnLoad
+						);
+			this.PreviewImage.Source = bitmapSource;
+		}
 	}
 }

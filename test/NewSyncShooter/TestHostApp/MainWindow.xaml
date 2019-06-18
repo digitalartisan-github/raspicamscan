@@ -7,7 +7,11 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="640" Width="1048">
     <Grid>
-        <ToolBarTray Grid.Row="1">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <ToolBarTray Grid.Row="0">
             <ToolBar>
                 <Button Content="カメラ検索" Name="ButtonConnectCamera" Click="ButtonConnectCamera_Click"/>
                 <Button Content="カメラ設定" Name="ButtonCameraSetting" Click="ButtonCameraSetting_Click"/>
@@ -19,14 +23,15 @@
             <ToolBar>
                 <Menu>
                     <MenuItem Header="表示画像">
-                        <MenuItem Header="正面カメラ"/>
-                        <MenuItem Header="背面カメラ"/>
-                        <MenuItem Header="右側カメラ"/>
-                        <MenuItem Header="左側カメラ"/>
+                        <MenuItem Header="正面カメラ" Name="ButtonFrontCamera" Click="ButtonFrontCamera_Click"/>
+                        <MenuItem Header="背面カメラ" Name="ButtonBackCamera" Click="ButtonBackCamera_Click"/>
+                        <MenuItem Header="右側カメラ" Name="ButtonRightCamera" Click="ButtonRightCamera_Click"/>
+                        <MenuItem Header="左側カメラ" Name="ButtonLeftCamera" Click="ButtonLeftCamera_Click"/>
                     </MenuItem>
                 </Menu> 
                 <Button Content="ネットワーク" />
             </ToolBar>
         </ToolBarTray>
+        <Image Grid.Row="1" Name="PreviewImage"/>
     </Grid>
 </Window>

@@ -8,13 +8,56 @@ namespace NewSyncShooter
 {
 	public class SyncshooterDefs
 	{
-		public int front_camera { get; set; }
-		public int back_camera { get; set; }
-		public int right_camera { get; set; }
-		public int left_camera { get; set; }
+		// front/back/right/left カメラのIPアドレスの第4オクテット
+		public int front_camera { get; set; } = -1;
+		public int back_camera { get; set; } = -1;
+		public int right_camera { get; set; } = -1;
+		public int left_camera { get; set; } = -1;
+		// IPアドレスのフォーマット (ex. 192.168.55.%d)
 		public string ip_template { get; set; }
 		public int camera_group_num { get; set; }
 		public Dictionary<string, int[]> camera_group { get; set; }
+
+		public string FrontCameraAddress
+		{
+			get
+			{
+				return Adrs4th_to_string( this.front_camera );
+			}
+		}
+		public string BackCameraAddress
+		{
+			get
+			{
+				return Adrs4th_to_string( this.back_camera );
+			}
+		}
+		public string RightCameraAddress
+		{
+			get
+			{
+				return Adrs4th_to_string( this.right_camera );
+			}
+		}
+		public string LeftCameraAddress
+		{
+			get
+			{
+				return Adrs4th_to_string( this.left_camera );
+			}
+		}
+
+		private string Adrs4th_to_string(int adrs4th)
+		{
+			string sFormat = ip_template;
+			if ( string.IsNullOrEmpty( sFormat ) ) {
+				return string.Empty;
+			} else {
+				int index = sFormat.LastIndexOf(".%d");
+				sFormat = sFormat.Substring( 0, index );
+				return sFormat + string.Format( ".{0}", adrs4th );
+			}
+		}
 
 		// IP Address の一覧を列挙する
 		public IEnumerable<string> GetAllCameraIPAddress()
