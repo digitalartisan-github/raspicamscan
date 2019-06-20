@@ -1,0 +1,48 @@
+﻿<Window x:Class="TestHostApp2.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:views="clr-namespace:TestHostApp2.Views"
+        xmlns:prism="http://prismlibrary.com/"
+        prism:ViewModelLocator.AutoWireViewModel="True"
+        Title="{Binding Title.Value}" Height="640" Width="1048">
+    <i:Interaction.Triggers>
+        <prism:InteractionRequestTrigger SourceObject="{Binding CameraConnectionRequest}">
+            <prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+                <prism:PopupWindowAction.WindowContent>
+                    <views:CameraConnectionView />
+                </prism:PopupWindowAction.WindowContent>
+            </prism:PopupWindowAction>
+        </prism:InteractionRequestTrigger>
+        
+    </i:Interaction.Triggers>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <ToolBarTray Grid.Row="0">
+            <ToolBar>
+                <Button Content="カメラ検索" Name="ButtonConnectCamera" Command="{Binding CameraConnectionCommand}"/>
+                <Button Content="カメラ設定" Name="ButtonCameraSetting" Command="{Binding CameraSettingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+                <Button Content="プレビュー" Name="ButtonPreview" Command="{Binding CameraPreviewingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+                <Button Content="撮影" Name="ButtonCapture" Command="{Binding CameraCapturingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+                <Button Content="カメラ停止" Name="ButtonStopCamera" Command="{Binding CameraStopCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+                <Button Content="カメラ再起動" Name="ButtonRebootCamera" Command="{Binding CameraRebootCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+            </ToolBar>
+            <ToolBar>
+                <Menu>
+                    <MenuItem Header="表示画像">
+                        <MenuItem Header="正面カメラ" Name="ButtonFrontCamera" Command="{Binding CameraFrontCommand}"/>
+                        <MenuItem Header="背面カメラ" Name="ButtonBackCamera" Command="{Binding CameraBackCommand}"/>
+                        <MenuItem Header="右側カメラ" Name="ButtonRightCamera" Command="{Binding CameraRightCommand}"/>
+                        <MenuItem Header="左側カメラ" Name="ButtonLeftCamera" Command="{Binding CameraLeftCommand}"/>
+                    </MenuItem>
+                </Menu>
+                <Button Content="ネットワーク" />
+            </ToolBar>
+        </ToolBarTray>
+        <Image Grid.Row="1" Name="PreviewImage" Source="{Binding PreviewingImage.Value}"/>
+        <ContentControl prism:RegionManager.RegionName="ContentRegion" />
+    </Grid>
+</Window>

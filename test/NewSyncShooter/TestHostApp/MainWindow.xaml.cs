@@ -30,7 +30,7 @@ namespace TestHostApp
 			InitializeComponent();
 
 			_newSyncShooter = new NewSyncShooter.NewSyncShooter();
-			_newSyncShooter.Initialize();
+			_newSyncShooter.Initialize( "syncshooterDefs.json" );
 			_connectedIPAddressList = new List<string>();
 		}
 

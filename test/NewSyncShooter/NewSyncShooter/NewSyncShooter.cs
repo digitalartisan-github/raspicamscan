@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 
@@ -35,11 +34,11 @@ namespace NewSyncShooter
 			}
 		}
 
-		public void Initialize()
+		public void Initialize( string jsonFilePath )
 		{
 			// Loading SyncshooterDefs
-			_syncshooterDefs = SyncshooterDefs.Deserialize( "syncshooterDefs.json" );
-			if ( _mapIP_Port  != null) {
+			_syncshooterDefs = SyncshooterDefs.Deserialize( jsonFilePath );
+			if (_mapIP_Port != null) {
 				_mapIP_Port.Clear();
 			}
 		}
@@ -132,7 +131,7 @@ namespace NewSyncShooter
 			System.Net.Sockets.NetworkStream ns = tcp.GetStream();
 			ns.ReadTimeout = 10000;
 			ns.WriteTimeout = 10000;
-			System.IO.MemoryStream ms = new System.IO.MemoryStream();
+			MemoryStream ms = new MemoryStream();
 
 			// get preview image コマンドを送信
 			string cmd = "PRV";
@@ -140,26 +139,26 @@ namespace NewSyncShooter
 			ns.Write( cmdBytes, 0, cmdBytes.Length );
 
 			// データを受信
-			while ( ns.DataAvailable == false ) {
+			while (ns.DataAvailable == false) {
 			}
 			ulong sum = 0;
 			ulong bytes_to_read = 0;
 			do {
 				byte[] rcvBytes = new byte[tcp.Client.Available];
 				int resSize = ns.Read( rcvBytes, 0, rcvBytes.Length );
-				if ( sum == 0 ) {
+				if (sum == 0) {
 					// 先頭の4バイトには、次に続くデータのサイズが書かれている
-					bytes_to_read = ( (ulong) rcvBytes[0] ) | ( (ulong) rcvBytes[1] << 8 ) | ( (ulong) rcvBytes[2] << 16 ) | ( (ulong) rcvBytes[3] << 24 );
+					bytes_to_read = ((ulong)rcvBytes[0]) | ((ulong)rcvBytes[1] << 8) | ((ulong)rcvBytes[2] << 16) | ((ulong)rcvBytes[3] << 24);
 					Console.Error.WriteLine( "bytes_to_read = {0}", bytes_to_read );
 				}
-				sum += (ulong) resSize;
+				sum += (ulong)resSize;
 				ms.Write( rcvBytes, 0, resSize );
-			} while ( sum < bytes_to_read + 4 );
+			} while (sum < bytes_to_read + 4);
 			//Console.Error.WriteLine( "size = {0}", (int) sum - 4 );
 			ms.Close();
 			ns.Close();
 			tcp.Close();
-			return ms.GetBuffer().Skip(4).ToArray();
+			return ms.GetBuffer().Skip( 4 ).ToArray();
 		}
 
 		public byte[] GetPreviewImageFront()
@@ -202,7 +201,7 @@ namespace NewSyncShooter
 			System.Net.Sockets.NetworkStream ns = tcp.GetStream();
 			ns.ReadTimeout = 10000;
 			ns.WriteTimeout = 10000;
-			System.IO.MemoryStream ms = new System.IO.MemoryStream();
+			MemoryStream ms = new MemoryStream();
 
 			// full image 取得コマンドを送信
 			string cmd = "IMG";
