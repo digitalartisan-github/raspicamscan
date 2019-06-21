@@ -1,48 +1,88 @@
-﻿<Window x:Class="TestHostApp2.Views.MainWindow"
+﻿<RibbonWindow x:Class="TestHostApp2.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:ad="http://schemas.xceed.com/wpf/xaml/avalondock"
         xmlns:views="clr-namespace:TestHostApp2.Views"
         xmlns:prism="http://prismlibrary.com/"
         prism:ViewModelLocator.AutoWireViewModel="True"
         Title="{Binding Title.Value}" Height="640" Width="1048">
-    <i:Interaction.Triggers>
-        <prism:InteractionRequestTrigger SourceObject="{Binding CameraConnectionRequest}">
-            <prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
-                <prism:PopupWindowAction.WindowContent>
-                    <views:CameraConnectionView />
-                </prism:PopupWindowAction.WindowContent>
-            </prism:PopupWindowAction>
-        </prism:InteractionRequestTrigger>
-        
-    </i:Interaction.Triggers>
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition/>
-        </Grid.RowDefinitions>
-        <ToolBarTray Grid.Row="0">
-            <ToolBar>
-                <Button Content="カメラ検索" Name="ButtonConnectCamera" Command="{Binding CameraConnectionCommand}"/>
-                <Button Content="カメラ設定" Name="ButtonCameraSetting" Command="{Binding CameraSettingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
-                <Button Content="プレビュー" Name="ButtonPreview" Command="{Binding CameraPreviewingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
-                <Button Content="撮影" Name="ButtonCapture" Command="{Binding CameraCapturingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
-                <Button Content="カメラ停止" Name="ButtonStopCamera" Command="{Binding CameraStopCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
-                <Button Content="カメラ再起動" Name="ButtonRebootCamera" Command="{Binding CameraRebootCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
-            </ToolBar>
-            <ToolBar>
-                <Menu>
-                    <MenuItem Header="表示画像">
-                        <MenuItem Header="正面カメラ" Name="ButtonFrontCamera" Command="{Binding CameraFrontCommand}"/>
-                        <MenuItem Header="背面カメラ" Name="ButtonBackCamera" Command="{Binding CameraBackCommand}"/>
-                        <MenuItem Header="右側カメラ" Name="ButtonRightCamera" Command="{Binding CameraRightCommand}"/>
-                        <MenuItem Header="左側カメラ" Name="ButtonLeftCamera" Command="{Binding CameraLeftCommand}"/>
-                    </MenuItem>
-                </Menu>
-                <Button Content="ネットワーク" />
-            </ToolBar>
-        </ToolBarTray>
-        <Image Grid.Row="1" Name="PreviewImage" Source="{Binding PreviewingImage.Value}"/>
-        <ContentControl prism:RegionManager.RegionName="ContentRegion" />
-    </Grid>
-</Window>
+	<i:Interaction.Triggers>
+		<prism:InteractionRequestTrigger SourceObject="{Binding CameraConnectionRequest}">
+			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+				<prism:PopupWindowAction.WindowContent>
+					<views:CameraConnectionView />
+				</prism:PopupWindowAction.WindowContent>
+			</prism:PopupWindowAction>
+		</prism:InteractionRequestTrigger>
+	</i:Interaction.Triggers>
+	
+	<DockPanel>
+
+		<Ribbon x:Name="Ribbon1" DockPanel.Dock="Top">
+			<Ribbon.QuickAccessToolBar>
+				<RibbonQuickAccessToolBar>
+					<!--<RibbonButton x:Name ="Save" SmallImageSource="images/Save_16x.png" Command="{Binding Path=SaveCommand}" ToolTip="保存"/>
+					<RibbonButton x:Name ="Undo" SmallImageSource="images/Undo_grey_16x.png" Command="{x:Static m:Commands.Undo}" ToolTip="元に戻す"/>
+					<RibbonButton x:Name ="Redo" SmallImageSource="images/Redo_grey_16x.png" Command="{x:Static m:Commands.Redo}" ToolTip="やり直し"/>-->
+				</RibbonQuickAccessToolBar>
+			</Ribbon.QuickAccessToolBar>
+
+			<Ribbon.ApplicationMenu>
+				<RibbonApplicationMenu Visibility="Collapsed"/>
+			</Ribbon.ApplicationMenu>
+
+			<RibbonTab Header="カメラ">
+				<RibbonGroup Header="カメラ">
+					<RibbonButton Label="検索" LargeImageSource="Images/camera_identification_60px.png" Command="{Binding CameraConnectionCommand}"/>
+					<RibbonButton Label="プレビュー" LargeImageSource="Images/screenshot_60px.png" Command="{Binding CameraPreviewingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+					<RibbonButton Label="設定" LargeImageSource="Images/camera_enhance_60px.png" Command="{Binding CameraSettingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+					<RibbonButton Label="撮影" LargeImageSource="Images/multiple_cameras_60px.png" Command="{Binding CameraCapturingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+					<RibbonButton Label="停止" LargeImageSource="Images/no_camera_60px.png" Command="{Binding CameraStopCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+					<RibbonButton Label="再起動" LargeImageSource="Images/switch_camera_60px.png" Command="{Binding CameraRebootCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+				</RibbonGroup>
+			<RibbonGroup Header="設定">
+					<RibbonMenuButton Label="表示画像" LargeImageSource="Images/sophia_loren_60px.png">
+					<RibbonButton Label="正面カメラ" Command="{Binding CameraFrontCommand}"/>
+					<RibbonButton Label="背面カメラ" Command="{Binding CameraBackCommand}"/>
+					<RibbonButton Label="右側カメラ" Command="{Binding CameraRightCommand}"/>
+					<RibbonButton Label="左側カメラ" Command="{Binding CameraLeftCommand}"/>
+				</RibbonMenuButton>
+					<RibbonButton Label="ネットワーク" LargeImageSource="Images/networking_manager_60px.png" Command="{Binding NetworkSettingCommand}"/>
+			</RibbonGroup>
+			</RibbonTab>
+		</Ribbon>
+
+		<ad:DockingManager x:Name="_dockingManager" FocusManager.FocusedElement="{Binding ElementName=PreviewImage}">
+			<ad:LayoutRoot>
+				<ad:LayoutPanel Orientation="Horizontal">
+					<ad:LayoutAnchorablePaneGroup DockWidth="200" Orientation="Vertical">
+						<ad:LayoutAnchorablePane>
+							<ad:LayoutAnchorable x:Name="FolderPane" Title="フォルダ" ContentId="Folder">
+								<StackPanel>
+									<TreeView></TreeView>
+								</StackPanel>
+							</ad:LayoutAnchorable>
+							<ad:LayoutAnchorable x:Name="CameraPane" Title="カメラ" ContentId="Camera">
+								<StackPanel>
+									<TreeView></TreeView>
+								</StackPanel>
+							</ad:LayoutAnchorable>
+						</ad:LayoutAnchorablePane>
+					</ad:LayoutAnchorablePaneGroup>
+
+					<ad:LayoutPanel Orientation="Vertical">
+						<ad:LayoutDocumentPane>
+							<ad:LayoutDocument x:Name="ViewWindow" Title="View" CanClose="False" CanFloat="False">
+								<Image Name="PreviewImage" Source="{Binding PreviewingImage.Value}" Width="800"/>
+							</ad:LayoutDocument>
+						</ad:LayoutDocumentPane>
+					</ad:LayoutPanel>
+				</ad:LayoutPanel>
+			</ad:LayoutRoot>
+		</ad:DockingManager>
+
+		<ContentControl prism:RegionManager.RegionName="ContentRegion" />
+
+	</DockPanel>
+</RibbonWindow>

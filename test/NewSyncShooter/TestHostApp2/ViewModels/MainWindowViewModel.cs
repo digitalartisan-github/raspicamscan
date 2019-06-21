@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using System.Net.NetworkInformation;
 using Prism.Mvvm;
 using Prism.Commands;
 using Prism.Interactivity.InteractionRequest;
@@ -14,10 +15,11 @@ using TestHostApp2.Notifications;
 
 namespace TestHostApp2.ViewModels
 {
-    public class MainWindowViewModel : BindableBase
-    {
+	public class MainWindowViewModel : BindableBase
+	{
 		NewSyncShooter.NewSyncShooter _newSyncShooter;
 		List<string> _connectedIPAddressList;
+		string _imageFolderPath;
 
 		public ReactiveProperty<string> Title { get; private set; } = new ReactiveProperty<string>( "NewSyncShooter" );
 		public ReactiveProperty<bool> IsCameraConnected { get; private set; } = new ReactiveProperty<bool>( false );
@@ -34,12 +36,14 @@ namespace TestHostApp2.ViewModels
 		public DelegateCommand CameraBackCommand { get; set; }
 		public DelegateCommand CameraRightCommand { get; set; }
 		public DelegateCommand CameraLeftCommand { get; set; }
+		public DelegateCommand NetworkSettingCommand { get; set; }
 
 		public MainWindowViewModel()
-        {
+		{
 			_newSyncShooter = new NewSyncShooter.NewSyncShooter();
 			_newSyncShooter.Initialize( "syncshooterDefs.json" );
 			_connectedIPAddressList = new List<string>();
+			_imageFolderPath = System.Environment.GetFolderPath( Environment.SpecialFolder.Personal );
 
 			CameraConnectionRequest = new InteractionRequest<INotification>();
 			CameraConnectionCommand = new DelegateCommand( RaiseCameraConnection );
@@ -52,6 +56,7 @@ namespace TestHostApp2.ViewModels
 			CameraBackCommand = new DelegateCommand( RaiseCameraBack );
 			CameraRightCommand = new DelegateCommand( RaiseCameraRight );
 			CameraLeftCommand = new DelegateCommand( RaiseCameraLeft );
+			NetworkSettingCommand = new DelegateCommand( RaiseNetworkSetting );
 		}
 
 		void RaiseCameraConnection()
@@ -69,7 +74,7 @@ namespace TestHostApp2.ViewModels
 
 			CameraConnectionRequest.Raise( notification );
 
-			this.IsCameraConnected.Value = (_connectedIPAddressList.Count > 0);
+			this.IsCameraConnected.Value = ( _connectedIPAddressList.Count > 0 );
 		}
 
 		void RaiseCameraSetting()
@@ -87,12 +92,12 @@ namespace TestHostApp2.ViewModels
 			try {
 				_connectedIPAddressList.AsParallel().ForAll( adrs => {
 					byte[] data = _newSyncShooter.GetPreviewImage( adrs );
-					String path = string.Format( "preview_{0}.bmp", adrs.ToString() );
-					using (var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite )) {
-						fs.Write( data, 0, (int)data.Length );
+					String path = Path.Combine( _imageFolderPath, string.Format( "preview_{0}.bmp", adrs.ToString() ) );
+					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+						fs.Write( data, 0, (int) data.Length );
 					}
 				} );
-			} catch (Exception e) {
+			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
 			}
 		}
@@ -102,9 +107,9 @@ namespace TestHostApp2.ViewModels
 			var t = DateTime.Now;
 			_connectedIPAddressList.AsParallel().ForAll( adrs => {
 				byte[] data = _newSyncShooter.GetFullImageInJpeg( adrs );
-				String path = string.Format( "full_{0}.jpg", adrs.ToString() );
-				using (var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite )) {
-					fs.Write( data, 0, (int)data.Length );
+				String path = Path.Combine( _imageFolderPath, string.Format( "full_{0}.jpg", adrs.ToString() ) );
+				using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+					fs.Write( data, 0, (int) data.Length );
 				}
 			} );
 			TimeSpan ts = DateTime.Now - t;
@@ -129,15 +134,15 @@ namespace TestHostApp2.ViewModels
 		{
 			try {
 				byte[] data = _newSyncShooter.GetPreviewImageFront();
-				if (data.Length > 0) {
+				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					String path = string.Format( @".\preview_front.bmp" );
-					using (var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite )) {
-						fs.Write( data, 0, (int)data.Length );
+					String path = Path.Combine( _imageFolderPath, string.Format( @".\preview_front.bmp" ) );
+					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+						fs.Write( data, 0, (int) data.Length );
 					}
 				}
-			} catch (Exception e) {
+			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
 			}
 		}
@@ -146,15 +151,15 @@ namespace TestHostApp2.ViewModels
 		{
 			try {
 				byte[] data = _newSyncShooter.GetPreviewImageBack();
-				if (data.Length > 0) {
+				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					String path = string.Format( @".\preview_back.bmp" );
-					using (var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite )) {
-						fs.Write( data, 0, (int)data.Length );
+					String path = Path.Combine( _imageFolderPath, string.Format( @".\preview_back.bmp" ) );
+					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+						fs.Write( data, 0, (int) data.Length );
 					}
 				}
-			} catch (Exception e) {
+			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
 			}
 		}
@@ -163,15 +168,15 @@ namespace TestHostApp2.ViewModels
 		{
 			try {
 				byte[] data = _newSyncShooter.GetPreviewImageRight();
-				if (data.Length > 0) {
+				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					String path = string.Format( @".\preview_right.bmp" );
-					using (var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite )) {
-						fs.Write( data, 0, (int)data.Length );
+					String path = Path.Combine( _imageFolderPath, string.Format( @".\preview_right.bmp" ) );
+					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+						fs.Write( data, 0, (int) data.Length );
 					}
 				}
-			} catch (Exception e) {
+			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
 			}
 		}
@@ -180,15 +185,15 @@ namespace TestHostApp2.ViewModels
 		{
 			try {
 				byte[] data = _newSyncShooter.GetPreviewImageLeft();
-				if (data.Length > 0) {
+				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					String path = string.Format( @".\preview_left.bmp" );
-					using (var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite )) {
-						fs.Write( data, 0, (int)data.Length );
+					String path = Path.Combine( _imageFolderPath, string.Format( @".\preview_left.bmp" ) );
+					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+						fs.Write( data, 0, (int) data.Length );
 					}
 				}
-			} catch (Exception e) {
+			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
 			}
 		}
@@ -198,6 +203,15 @@ namespace TestHostApp2.ViewModels
 			var ms = new MemoryStream( data );
 			BitmapSource bitmapSource = BitmapFrame.Create( ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad );
 			this.PreviewingImage.Value = bitmapSource;
+		}
+
+		void RaiseNetworkSetting()
+		{
+			if ( NetworkInterface.GetIsNetworkAvailable() ) {
+				MessageBox.Show( "ネットワークに接続されています", this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Information );
+			} else {
+				MessageBox.Show( "ネットワークに接続されていません", this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Warning );
+			}
 		}
 	}
 }
