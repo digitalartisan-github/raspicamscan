@@ -148,5 +148,12 @@
   <ItemGroup>
     <Resource Include="Views\Images\multiple_cameras_60px.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Views\Images\screenshot_off_60px.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Views\Images\add_folder_60px.png" />
+    <Resource Include="Views\Images\opened_folder_60px.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

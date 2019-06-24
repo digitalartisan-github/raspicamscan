@@ -16,10 +16,9 @@
 			</prism:PopupWindowAction>
 		</prism:InteractionRequestTrigger>
 	</i:Interaction.Triggers>
-	
-	<DockPanel>
 
-		<Ribbon x:Name="Ribbon1" DockPanel.Dock="Top">
+    <DockPanel>
+        <Ribbon x:Name="Ribbon1" DockPanel.Dock="Top">
 			<Ribbon.QuickAccessToolBar>
 				<RibbonQuickAccessToolBar>
 					<!--<RibbonButton x:Name ="Save" SmallImageSource="images/Save_16x.png" Command="{Binding Path=SaveCommand}" ToolTip="保存"/>
@@ -32,16 +31,20 @@
 				<RibbonApplicationMenu Visibility="Collapsed"/>
 			</Ribbon.ApplicationMenu>
 
-			<RibbonTab Header="カメラ">
-				<RibbonGroup Header="カメラ">
+			<RibbonTab Header="ホーム">
+				<RibbonGroup Header="画像フォルダ">
+					<RibbonButton Label="新規" LargeImageSource="Images/add_folder_60px.png"/>
+					<RibbonButton Label="開く" LargeImageSource="Images/opened_folder_60px.png"/>
+				</RibbonGroup>
+                <RibbonGroup Header="カメラ">
 					<RibbonButton Label="検索" LargeImageSource="Images/camera_identification_60px.png" Command="{Binding CameraConnectionCommand}"/>
-					<RibbonButton Label="プレビュー" LargeImageSource="Images/screenshot_60px.png" Command="{Binding CameraPreviewingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+					<RibbonToggleButton Label="プレビュー" LargeImageSource="Images/screenshot_60px.png" IsChecked="{Binding IsCameraPreviwing, Mode=TwoWay}" IsEnabled="{Binding IsCameraConnected.Value}"/>
 					<RibbonButton Label="設定" LargeImageSource="Images/camera_enhance_60px.png" Command="{Binding CameraSettingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
 					<RibbonButton Label="撮影" LargeImageSource="Images/multiple_cameras_60px.png" Command="{Binding CameraCapturingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
 					<RibbonButton Label="停止" LargeImageSource="Images/no_camera_60px.png" Command="{Binding CameraStopCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
 					<RibbonButton Label="再起動" LargeImageSource="Images/switch_camera_60px.png" Command="{Binding CameraRebootCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
 				</RibbonGroup>
-			<RibbonGroup Header="設定">
+			    <RibbonGroup Header="設定">
 					<RibbonMenuButton Label="表示画像" LargeImageSource="Images/sophia_loren_60px.png">
 					<RibbonButton Label="正面カメラ" Command="{Binding CameraFrontCommand}"/>
 					<RibbonButton Label="背面カメラ" Command="{Binding CameraBackCommand}"/>
@@ -58,12 +61,12 @@
 				<ad:LayoutPanel Orientation="Horizontal">
 					<ad:LayoutAnchorablePaneGroup DockWidth="200" Orientation="Vertical">
 						<ad:LayoutAnchorablePane>
-							<ad:LayoutAnchorable x:Name="FolderPane" Title="フォルダ" ContentId="Folder">
+							<ad:LayoutAnchorable x:Name="FolderPane" Title="ファイル ビュー" ContentId="Folder">
 								<StackPanel>
 									<TreeView></TreeView>
 								</StackPanel>
 							</ad:LayoutAnchorable>
-							<ad:LayoutAnchorable x:Name="CameraPane" Title="カメラ" ContentId="Camera">
+							<ad:LayoutAnchorable x:Name="CameraPane" Title="カメラ ビュー" ContentId="Camera">
 								<StackPanel>
 									<TreeView></TreeView>
 								</StackPanel>

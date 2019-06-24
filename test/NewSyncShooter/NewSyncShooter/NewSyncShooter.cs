@@ -219,7 +219,7 @@ namespace NewSyncShooter
 				if ( sum == 0 ) {
 					// 先頭の4バイトには、次に続くデータのサイズが書かれている
 					bytes_to_read = ( (ulong) rcvBytes[0] ) | ( (ulong) rcvBytes[1] << 8 ) | ( (ulong) rcvBytes[2] << 16 ) | ( (ulong) rcvBytes[3] << 24 );
-					Console.WriteLine( "{0}: bytes_to_read = {1}", ipAddress, bytes_to_read );
+					//Console.WriteLine( "{0}: bytes_to_read = {1}", ipAddress, bytes_to_read );
 				}
 				sum += (ulong) resSize;
 				ms.Write( rcvBytes, 0, resSize );
@@ -271,47 +271,53 @@ namespace NewSyncShooter
 			udp.Close();
 
 			// アドレスの第4オクテットの昇順でソート
-			return mapIPvsPort.OrderBy( pair =>
+			var connectedList = mapIPvsPort.OrderBy( pair =>
 			{
 				int idx = pair.Key.LastIndexOf('.');
 				int adrs4th = int.Parse(pair.Key.Substring( idx  + 1 ));
 				return adrs4th;
 			} ).Select( pair => pair.Key );
+
+			// SyncShooterDefsにある全IPアドレスリストにないものは除く
+			return connectedList.Intersect( _syncshooterDefs.GetAllCameraIPAddress() );
 		}
 
-		public IEnumerable<string> GetConnectedHostAddress( IEnumerable<string> ipAddressList )
-		{
-			// UDP マルチキャストを開く
-			_mcastClient = new MultiCastClient( MCAST_GRP, MCAST_PORT );
-			if ( _mcastClient.Open() == false ) {
-				return Array.Empty<string>();
-			}
+		//public IEnumerable<string> GetConnectedHostAddress( IEnumerable<string> ipAddressList )
+		//{
+		//	// UDP マルチキャストを開く
+		//	_mcastClient = new MultiCastClient( MCAST_GRP, MCAST_PORT );
+		//	if ( _mcastClient.Open() == false ) {
+		//		return Array.Empty<string>();
+		//	}
 
-			// マルチキャストに参加しているラズパイに"INQ"コマンドを送信
-			_mcastClient.SendCommand( "INQ" );
-			System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある
+		//	// マルチキャストに参加しているラズパイに"INQ"コマンドを送信
+		//	_mcastClient.SendCommand( "INQ" );
+		//	System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある
 
-			List<string> connectedIpAddressList = new List<string>();
-			foreach ( var ipAddress in ipAddressList ) {
-				TcpClient tcp = new TcpClient( ipAddress, SENDBACK_PORT );
-				System.Net.Sockets.NetworkStream ns = tcp.GetStream();
-				ns.ReadTimeout = 10000;
-				ns.WriteTimeout = 10000;
+		//	// "ACK"を返してきたカメラのIPアドレスを記録する
+		//	List<string> connectedIpAddressList = new List<string>();
+		//	foreach ( var ipAddress in ipAddressList ) {
+		//		TcpClient tcp = new TcpClient( ipAddress, SENDBACK_PORT );
+		//		System.Net.Sockets.NetworkStream ns = tcp.GetStream();
+		//		ns.ReadTimeout = 10000;
+		//		ns.WriteTimeout = 10000;
 
-				// データを受信
-				while ( tcp.Client.Available == 0 ) {
-				}
-				byte[] rcvBytes = new byte[tcp.Client.Available];
-				ns.Read( rcvBytes, 0, tcp.Client.Available );
-				string rcvString = System.Text.Encoding.UTF8.GetString( rcvBytes );
-				tcp.Close();
+		//		// データを受信
+		//		while ( tcp.Client.Available == 0 ) {
+		//		}
+		//		byte[] rcvBytes = new byte[tcp.Client.Available];
+		//		ns.Read( rcvBytes, 0, tcp.Client.Available );
+		//		string rcvString = System.Text.Encoding.UTF8.GetString( rcvBytes );
+		//		tcp.Close();
 
-				if ( rcvString == "ACK" ) {
-					connectedIpAddressList.Add( ipAddress );
-				}
-			}
-			return connectedIpAddressList;
-		}
+		//		if ( rcvString == "ACK" ) {
+		//			connectedIpAddressList.Add( ipAddress );
+		//		}
+		//	}
+
+		//	// SyncShooterDefsにある全IPアドレスリストにないものは除く
+		//	return connectedIpAddressList.Union( _syncshooterDefs.GetAllCameraIPAddress() );
+		//}
 
 	}
 }

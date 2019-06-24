@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using System.Net.NetworkInformation;
 using Prism.Mvvm;
 using Prism.Commands;
@@ -20,15 +21,32 @@ namespace TestHostApp2.ViewModels
 		NewSyncShooter.NewSyncShooter _newSyncShooter;
 		List<string> _connectedIPAddressList;
 		string _imageFolderPath;
+		bool _isCameraPreviwing;
+		DispatcherTimer _previewingTimer;
 
 		public ReactiveProperty<string> Title { get; private set; } = new ReactiveProperty<string>( "NewSyncShooter" );
 		public ReactiveProperty<bool> IsCameraConnected { get; private set; } = new ReactiveProperty<bool>( false );
 		public ReactiveProperty<BitmapSource> PreviewingImage { get; private set; } = new ReactiveProperty<BitmapSource>();
 
+		public bool IsCameraPreviwing
+		{
+			get { return _isCameraPreviwing; }
+			set
+			{
+				_isCameraPreviwing = value;
+				if ( _isCameraPreviwing ) {
+					_previewingTimer.Start();
+				} else {
+					_previewingTimer.Stop();
+					this.PreviewingImage.Value = null;
+				}
+				RaisePropertyChanged();
+			}
+		}
+
 		public InteractionRequest<INotification> CameraConnectionRequest { get; set; }
 		public DelegateCommand CameraConnectionCommand { get; set; }
 		public DelegateCommand CameraSettingCommand { get; set; }
-		public DelegateCommand CameraPreviewingCommand { get; set; }
 		public DelegateCommand CameraCapturingCommand { get; set; }
 		public DelegateCommand CameraStopCommand { get; set; }
 		public DelegateCommand CameraRebootCommand { get; set; }
@@ -44,11 +62,11 @@ namespace TestHostApp2.ViewModels
 			_newSyncShooter.Initialize( "syncshooterDefs.json" );
 			_connectedIPAddressList = new List<string>();
 			_imageFolderPath = System.Environment.GetFolderPath( Environment.SpecialFolder.Personal );
+			_isCameraPreviwing = false;
 
 			CameraConnectionRequest = new InteractionRequest<INotification>();
 			CameraConnectionCommand = new DelegateCommand( RaiseCameraConnection );
 			CameraSettingCommand = new DelegateCommand( RaiseCameraSetting );
-			CameraPreviewingCommand = new DelegateCommand( RaiseCameraPreviewing );
 			CameraCapturingCommand = new DelegateCommand( RaiseCameraCapturing );
 			CameraStopCommand = new DelegateCommand( RaiseCameraStop );
 			CameraRebootCommand = new DelegateCommand( RaiseCameraReboot );
@@ -57,6 +75,21 @@ namespace TestHostApp2.ViewModels
 			CameraRightCommand = new DelegateCommand( RaiseCameraRight );
 			CameraLeftCommand = new DelegateCommand( RaiseCameraLeft );
 			NetworkSettingCommand = new DelegateCommand( RaiseNetworkSetting );
+
+			// Previewing timer を 100msecでセット
+			_previewingTimer = new DispatcherTimer( DispatcherPriority.Render );
+			_previewingTimer.Interval = TimeSpan.FromMilliseconds( 100 );
+			_previewingTimer.Tick += ( sender, args ) =>
+			{
+				try {
+					byte[] data = _newSyncShooter.GetPreviewImageFront();
+					if ( data.Length > 0 ) {
+						ShowPreviewImage( data );
+					}
+				} catch ( Exception e ) {
+					//MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
+				}
+			};
 		}
 
 		void RaiseCameraConnection()
@@ -79,6 +112,7 @@ namespace TestHostApp2.ViewModels
 
 		void RaiseCameraSetting()
 		{
+			IsCameraPreviwing = false;
 			// TEST
 			_connectedIPAddressList.ToList().ForEach( adrs => {
 				var param = _newSyncShooter.GetCameraParam( adrs );
@@ -87,23 +121,9 @@ namespace TestHostApp2.ViewModels
 			} );
 		}
 
-		void RaiseCameraPreviewing()
-		{
-			try {
-				_connectedIPAddressList.AsParallel().ForAll( adrs => {
-					byte[] data = _newSyncShooter.GetPreviewImage( adrs );
-					String path = Path.Combine( _imageFolderPath, string.Format( "preview_{0}.bmp", adrs.ToString() ) );
-					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-						fs.Write( data, 0, (int) data.Length );
-					}
-				} );
-			} catch ( Exception e ) {
-				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
-			}
-		}
-
 		void RaiseCameraCapturing()
 		{
+			IsCameraPreviwing = false;
 			var t = DateTime.Now;
 			_connectedIPAddressList.AsParallel().ForAll( adrs => {
 				byte[] data = _newSyncShooter.GetFullImageInJpeg( adrs );
@@ -118,6 +138,7 @@ namespace TestHostApp2.ViewModels
 
 		void RaiseCameraStop()
 		{
+			IsCameraPreviwing = false;
 			_newSyncShooter.StopCamera( false );
 			_connectedIPAddressList.Clear();
 			this.IsCameraConnected.Value = ( _connectedIPAddressList.Count > 0 );
@@ -125,6 +146,7 @@ namespace TestHostApp2.ViewModels
 
 		void RaiseCameraReboot()
 		{
+			IsCameraPreviwing = false;
 			_newSyncShooter.StopCamera( true );
 			_connectedIPAddressList.Clear();
 			this.IsCameraConnected.Value = ( _connectedIPAddressList.Count > 0 );
@@ -132,6 +154,7 @@ namespace TestHostApp2.ViewModels
 
 		void RaiseCameraFront()
 		{
+			IsCameraPreviwing = false;
 			try {
 				byte[] data = _newSyncShooter.GetPreviewImageFront();
 				if ( data.Length > 0 ) {
@@ -149,6 +172,7 @@ namespace TestHostApp2.ViewModels
 
 		void RaiseCameraBack()
 		{
+			IsCameraPreviwing = false;
 			try {
 				byte[] data = _newSyncShooter.GetPreviewImageBack();
 				if ( data.Length > 0 ) {
@@ -166,6 +190,7 @@ namespace TestHostApp2.ViewModels
 
 		void RaiseCameraRight()
 		{
+			IsCameraPreviwing = false;
 			try {
 				byte[] data = _newSyncShooter.GetPreviewImageRight();
 				if ( data.Length > 0 ) {
@@ -183,6 +208,7 @@ namespace TestHostApp2.ViewModels
 
 		void RaiseCameraLeft()
 		{
+			IsCameraPreviwing = false;
 			try {
 				byte[] data = _newSyncShooter.GetPreviewImageLeft();
 				if ( data.Length > 0 ) {
