@@ -10,7 +10,7 @@
         <Label Margin="4,4,4,0" Content="Not Connected:"/>
         <ListBox Name="ListBox_NotConnected" Height="150" Margin="4" ItemsSource="{Binding Notification.NotConnectedItems}"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Name="Button_OK" Height="24" Content="OK" Width="48" Margin="4" Command="{Binding OkCommand}"/>
+            <Button Name="Button_OK" Height="24" Content="OK" Width="48" Margin="4" Command="{Binding OkCommand}" IsDefault="True"/>
         </StackPanel>
     </StackPanel>
 </UserControl>

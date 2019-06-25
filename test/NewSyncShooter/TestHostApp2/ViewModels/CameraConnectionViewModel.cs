@@ -18,30 +18,28 @@ namespace TestHostApp2.ViewModels
 
 		public CameraConnectionViewModel()
 		{
-			OkCommand = new DelegateCommand(CancelInteraction);
+			OkCommand = new DelegateCommand( CancelInteraction );
 		}
 
 		private void CancelInteraction()
 		{
-			_notification.SelectedItem = null;
 			_notification.Confirmed = false;
 			FinishInteraction?.Invoke();
 		}
 
 		private void AcceptSelectedItem()
 		{
-			_notification.SelectedItem = SelectedItem;
 			_notification.Confirmed = true;
 			FinishInteraction?.Invoke();
 		}
 
 		public Action FinishInteraction { get; set; }
-		private ICustomNotification _notification;
+		private IConfirmation _notification;
 
 		public INotification Notification
 		{
 			get { return _notification; }
-			set { SetProperty(ref _notification, (ICustomNotification)value); }
+			set { SetProperty( ref _notification, (IConfirmation)value); }
 		}
 	}
 }

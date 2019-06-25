@@ -4,11 +4,11 @@ using System.Windows.Controls;
 namespace TestHostApp2.Views
 {
 	/// <summary>
-	/// Interaction logic for CameraConnectionView.xaml
+	/// NewProjectView.xaml の相互作用ロジック
 	/// </summary>
-	public partial class CameraConnectionView : UserControl
+	public partial class NewProjectView : UserControl
 	{
-		public CameraConnectionView()
+		public NewProjectView()
 		{
 			InitializeComponent();
 		}

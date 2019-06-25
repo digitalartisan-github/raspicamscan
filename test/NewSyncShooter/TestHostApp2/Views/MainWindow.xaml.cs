@@ -12,5 +12,5 @@ namespace TestHostApp2.Views
         {
             InitializeComponent();
         }
-    }
+	}
 }

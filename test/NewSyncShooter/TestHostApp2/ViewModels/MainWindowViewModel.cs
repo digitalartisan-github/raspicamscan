@@ -12,7 +12,9 @@ using Prism.Commands;
 using Prism.Interactivity.InteractionRequest;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
+using Ookii.Dialogs.Wpf;
 using TestHostApp2.Notifications;
+using TestHostApp2.Models;
 
 namespace TestHostApp2.ViewModels
 {
@@ -20,14 +22,20 @@ namespace TestHostApp2.ViewModels
 	{
 		NewSyncShooter.NewSyncShooter _newSyncShooter;
 		List<string> _connectedIPAddressList;
-		string _imageFolderPath;
+		Project _project;
 		bool _isCameraPreviwing;
 		DispatcherTimer _previewingTimer;
 
 		public ReactiveProperty<string> Title { get; private set; } = new ReactiveProperty<string>( "NewSyncShooter" );
 		public ReactiveProperty<bool> IsCameraConnected { get; private set; } = new ReactiveProperty<bool>( false );
 		public ReactiveProperty<BitmapSource> PreviewingImage { get; private set; } = new ReactiveProperty<BitmapSource>();
+		public ObservableCollection<FileTreeItem> FileTree { get; } = new ObservableCollection<FileTreeItem>();
+		public ObservableCollection<CameraTreeItem> CameraTree { get; } = new ObservableCollection<CameraTreeItem>();
+		public ReactiveProperty<bool> IsExpanded { get; set; }
 
+		/// <summary>
+		/// カメラプレビュー中か
+		/// </summary>
 		public bool IsCameraPreviwing
 		{
 			get { return _isCameraPreviwing; }
@@ -44,6 +52,25 @@ namespace TestHostApp2.ViewModels
 			}
 		}
 
+		/// <summary>情報MessageBoxを表示します。</summary>
+		public InteractionRequest<INotification> MessageBoxRequest { get; private set; }
+
+		/// <summary>情報メッセージボックスを表示します。</summary>
+		/// <param name="message">メッセージボックスに表示する内容を表す文字列。</param>
+		/// <param name="title">メッセージボックスのタイトルを表す文字列。</param>
+		private void SowInformationMessage( string message, string title = "Information" )
+		{
+			var notify = new Notification()
+			{
+				Content = message,
+				Title = title
+			};
+			this.MessageBoxRequest.Raise( notify );
+		}
+
+		public InteractionRequest<INotification> NewProjectRequest { get; set; }
+		public DelegateCommand NewProjectCommand { get; set; }
+		public DelegateCommand OpenFolderCommand { get; set; }
 		public InteractionRequest<INotification> CameraConnectionRequest { get; set; }
 		public DelegateCommand CameraConnectionCommand { get; set; }
 		public DelegateCommand CameraSettingCommand { get; set; }
@@ -60,10 +87,18 @@ namespace TestHostApp2.ViewModels
 		{
 			_newSyncShooter = new NewSyncShooter.NewSyncShooter();
 			_newSyncShooter.Initialize( "syncshooterDefs.json" );
+
+			_project = new Project();
+
 			_connectedIPAddressList = new List<string>();
-			_imageFolderPath = System.Environment.GetFolderPath( Environment.SpecialFolder.Personal );
 			_isCameraPreviwing = false;
 
+			this.IsExpanded = new ReactiveProperty<bool>( true );
+
+			MessageBoxRequest = new InteractionRequest<INotification>();
+			NewProjectRequest = new InteractionRequest<INotification>();
+			NewProjectCommand = new DelegateCommand( RaiseNewProjectCommand );
+			OpenFolderCommand = new DelegateCommand( RaiseOpenFolderCommand );
 			CameraConnectionRequest = new InteractionRequest<INotification>();
 			CameraConnectionCommand = new DelegateCommand( RaiseCameraConnection );
 			CameraSettingCommand = new DelegateCommand( RaiseCameraSetting );
@@ -79,22 +114,74 @@ namespace TestHostApp2.ViewModels
 			// Previewing timer を 100msecでセット
 			_previewingTimer = new DispatcherTimer( DispatcherPriority.Render );
 			_previewingTimer.Interval = TimeSpan.FromMilliseconds( 100 );
-			_previewingTimer.Tick += ( sender, args ) =>
-			{
+			_previewingTimer.Tick += ( sender, args ) => {
 				try {
 					byte[] data = _newSyncShooter.GetPreviewImageFront();
-					if ( data.Length > 0 ) {
+					if (data.Length > 0) {
 						ShowPreviewImage( data );
 					}
-				} catch ( Exception e ) {
+				} catch (Exception e) {
 					//MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
 				}
 			};
 		}
 
+		/// <summary>
+		/// 新規プロジェクト作成ダイアログを開く
+		/// </summary>
+		void RaiseNewProjectCommand()
+		{
+			var notification = new NewProjectNotification { Title = "New Project" };
+			notification.Project = _project;
+			NewProjectRequest.Raise( notification );
+			if (notification.Confirmed) {
+				_project = notification.Project;
+				if ( Directory.Exists( _project.ProjectFolderPath ) ) {
+					SowInformationMessage( _project.ProjectFolderPath + "は既に存在しています。新しい名前を指定してください。" );
+				} else {
+					Directory.CreateDirectory( _project.ProjectFolderPath );
+					// コメントを出力
+					using ( var fs = new FileStream( Path.Combine( _project.ProjectFolderPath, "Comment.txt" ), FileMode.CreateNew ) ) {
+						using ( var sw = new StreamWriter( fs ) ) {
+							sw.WriteLine( _project.Comment );
+						}
+					}
+					FileTree.Clear();
+					FileTree.Add( new FileTreeItem( _project.ProjectFolderPath ) );
+					IsExpanded.Value = true;
+				}
+			}
+		}
+
+		/// <summary>
+		/// プロジェクトを開く
+		/// </summary>
+		void RaiseOpenFolderCommand()
+		{
+			VistaFolderBrowserDialog dlg = new VistaFolderBrowserDialog();
+			dlg.SelectedPath = _project.BaseFolderPath;
+			dlg.RootFolder = Environment.SpecialFolder.Personal;
+			dlg.ShowNewFolderButton = true;
+			var response = dlg.ShowDialog();
+			if ( response.HasValue && response.Value ) {
+				// dlg.SelectedPath の最後のディレクトリ名をプロジェクト名に
+				// その前までをベースフォルダに
+				int lastPos = dlg.SelectedPath.LastIndexOf("\\");
+				_project.ProjectName = dlg.SelectedPath.Substring( lastPos + 1 );
+				_project.BaseFolderPath = dlg.SelectedPath.Substring( 0, lastPos + 1 );
+
+				FileTree.Clear();
+				FileTree.Add( new FileTreeItem( _project.ProjectFolderPath ) );
+				IsExpanded.Value = true;
+			}
+		}
+
+		/// <summary>
+		/// カメラ検索
+		/// </summary>
 		void RaiseCameraConnection()
 		{
-			var notification = new CustomNotification { Title = "Camera Connection" };
+			var notification = new CameraConnectionNotification { Title = "Camera Connection" };
 			_connectedIPAddressList.Clear();
 			_newSyncShooter.ConnectCamera().ToList().ForEach( adrs => {
 				_connectedIPAddressList.Add( adrs );
@@ -104,16 +191,19 @@ namespace TestHostApp2.ViewModels
 			var allList = _newSyncShooter.GetSyncshooterDefs().GetAllCameraIPAddress();
 			var exceptList = allList.Except( _connectedIPAddressList ).ToList();
 			exceptList.ForEach( adrs => notification.NotConnectedItems.Add( adrs ) );
-
 			CameraConnectionRequest.Raise( notification );
-
 			this.IsCameraConnected.Value = ( _connectedIPAddressList.Count > 0 );
+
+			CameraTree.Clear();
+			CameraTree.Add( new CameraTreeItem( _connectedIPAddressList ) );
+			//CameraTree.Add( new CameraTreeItem( notification.NotConnectedItems.ToList() ) );
 		}
 
+		// カメラ設定
 		void RaiseCameraSetting()
 		{
 			IsCameraPreviwing = false;
-			// TEST
+			// TODO: 仕様を確認すること
 			_connectedIPAddressList.ToList().ForEach( adrs => {
 				var param = _newSyncShooter.GetCameraParam( adrs );
 				param.Orientation = 1;
@@ -121,19 +211,33 @@ namespace TestHostApp2.ViewModels
 			} );
 		}
 
+		// 撮影
 		void RaiseCameraCapturing()
 		{
-			IsCameraPreviwing = false;
-			var t = DateTime.Now;
-			_connectedIPAddressList.AsParallel().ForAll( adrs => {
-				byte[] data = _newSyncShooter.GetFullImageInJpeg( adrs );
-				String path = Path.Combine( _imageFolderPath, string.Format( "full_{0}.jpg", adrs.ToString() ) );
-				using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-					fs.Write( data, 0, (int) data.Length );
-				}
-			} );
-			TimeSpan ts = DateTime.Now - t;
-			MessageBox.Show( ts.ToString( "s\\.fff" ) + " sec", "Capture", MessageBoxButton.OK, MessageBoxImage.Information );
+			// プロジェクトのフォルダ名＋現在の年月日時分秒からなるフォルダ名のフォルダに画像を保存する
+			string sTargetDir = Path.Combine( _project.ProjectFolderPath, DateTime.Now.ToString("yyyyMMdd-HHmmss") );
+			try {
+				Directory.CreateDirectory( sTargetDir );
+
+				IsCameraPreviwing = false;
+				var t = DateTime.Now;
+				_connectedIPAddressList.AsParallel().ForAll( adrs =>
+				{
+					// 画像を撮影＆取得
+					byte[] data = _newSyncShooter.GetFullImageInJpeg( adrs );
+					// IP Address の第4オクテットのファイル名で保存する
+					int idx = adrs.LastIndexOf('.');
+					int adrs4th = int.Parse(adrs.Substring( idx  + 1 ));
+					String path = Path.Combine( sTargetDir, string.Format( "{0}.jpg", adrs4th ) );
+					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+						fs.Write( data, 0, (int) data.Length );
+					}
+				} );
+				TimeSpan ts = DateTime.Now - t;
+				SowInformationMessage( sTargetDir + "\n\nElapsed: " + ts.ToString( "s\\.fff" ) + " sec" );
+			} catch (Exception e) {
+				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
+			}
 		}
 
 		void RaiseCameraStop()
@@ -160,7 +264,7 @@ namespace TestHostApp2.ViewModels
 				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					String path = Path.Combine( _imageFolderPath, string.Format( @".\preview_front.bmp" ) );
+					String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_front.bmp" ) );
 					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
 						fs.Write( data, 0, (int) data.Length );
 					}
@@ -178,7 +282,7 @@ namespace TestHostApp2.ViewModels
 				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					String path = Path.Combine( _imageFolderPath, string.Format( @".\preview_back.bmp" ) );
+					String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_back.bmp" ) );
 					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
 						fs.Write( data, 0, (int) data.Length );
 					}
@@ -196,7 +300,7 @@ namespace TestHostApp2.ViewModels
 				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					String path = Path.Combine( _imageFolderPath, string.Format( @".\preview_right.bmp" ) );
+					String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_right.bmp" ) );
 					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
 						fs.Write( data, 0, (int) data.Length );
 					}
@@ -214,7 +318,7 @@ namespace TestHostApp2.ViewModels
 				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					String path = Path.Combine( _imageFolderPath, string.Format( @".\preview_left.bmp" ) );
+					String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_left.bmp" ) );
 					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
 						fs.Write( data, 0, (int) data.Length );
 					}
