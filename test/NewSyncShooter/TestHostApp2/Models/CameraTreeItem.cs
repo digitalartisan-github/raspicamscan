@@ -52,6 +52,7 @@ namespace TestHostApp2.Models
 				Source = new BitmapImage( new Uri( @"Images\imac_30px.png", UriKind.Relative ) ),
 				Width = 15,
 				Height = 18,
+				Margin = new Thickness( 0, 0, 4, 0 )
 			} );
 			sp.Children.Add( new TextBlock() { Text = string.Format( "Connected Camera ({0})", _IPAddressList.Count ) } );
 			return sp;

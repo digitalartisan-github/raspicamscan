@@ -74,6 +74,7 @@ namespace TestHostApp2.ViewModels
 		public InteractionRequest<INotification> CameraConnectionRequest { get; set; }
 		public DelegateCommand CameraConnectionCommand { get; set; }
 		public DelegateCommand CameraSettingCommand { get; set; }
+		public InteractionRequest<INotification> CameraCapturingRequest { get; set; }
 		public DelegateCommand CameraCapturingCommand { get; set; }
 		public DelegateCommand CameraStopCommand { get; set; }
 		public DelegateCommand CameraRebootCommand { get; set; }
@@ -102,6 +103,7 @@ namespace TestHostApp2.ViewModels
 			CameraConnectionRequest = new InteractionRequest<INotification>();
 			CameraConnectionCommand = new DelegateCommand( RaiseCameraConnection );
 			CameraSettingCommand = new DelegateCommand( RaiseCameraSetting );
+			CameraCapturingRequest = new InteractionRequest<INotification>();
 			CameraCapturingCommand = new DelegateCommand( RaiseCameraCapturing );
 			CameraStopCommand = new DelegateCommand( RaiseCameraStop );
 			CameraRebootCommand = new DelegateCommand( RaiseCameraReboot );
@@ -199,7 +201,9 @@ namespace TestHostApp2.ViewModels
 			//CameraTree.Add( new CameraTreeItem( notification.NotConnectedItems.ToList() ) );
 		}
 
-		// カメラ設定
+		/// <summary>
+		/// カメラ設定
+		/// </summary>
 		void RaiseCameraSetting()
 		{
 			IsCameraPreviwing = false;
@@ -211,11 +215,21 @@ namespace TestHostApp2.ViewModels
 			} );
 		}
 
-		// 撮影
+		/// <summary>
+		/// 撮影
+		/// </summary>
 		void RaiseCameraCapturing()
 		{
-			// プロジェクトのフォルダ名＋現在の年月日時分秒からなるフォルダ名のフォルダに画像を保存する
-			string sTargetDir = Path.Combine( _project.ProjectFolderPath, DateTime.Now.ToString("yyyyMMdd-HHmmss") );
+			var notification = new CameraCapturingNotification { Title = "撮影番号設定" };
+			CameraCapturingRequest.Raise( notification );
+			if ( ! notification.Confirmed ) {
+				return;
+			}
+
+			// 撮影フォルダ名：
+			// プロジェクトのフォルダ名＋現在の年月日時分秒＋撮影番号からなるフォルダ名のフォルダに画像を保存する
+			string sTargetDir = Path.Combine( _project.ProjectFolderPath,
+				DateTime.Now.ToString("yyyyMMdd-HHmmss") + string.Format("({0})", notification.CapturingName) );
 			try {
 				Directory.CreateDirectory( sTargetDir );
 
@@ -233,8 +247,15 @@ namespace TestHostApp2.ViewModels
 						fs.Write( data, 0, (int) data.Length );
 					}
 				} );
+
+				// 「ファイルビュー」表示を更新
+				FileTree.Clear();
+				FileTree.Add( new FileTreeItem( _project.ProjectFolderPath ) );
+				IsExpanded.Value = true;
+
 				TimeSpan ts = DateTime.Now - t;
 				SowInformationMessage( sTargetDir + "\n\nElapsed: " + ts.ToString( "s\\.fff" ) + " sec" );
+
 			} catch (Exception e) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
 			}

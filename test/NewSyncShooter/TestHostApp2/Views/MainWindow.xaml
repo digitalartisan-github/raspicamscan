@@ -37,6 +37,15 @@
 				</prism:PopupWindowAction.WindowContent>
 			</prism:PopupWindowAction>
 		</prism:InteractionRequestTrigger>
+
+		<prism:InteractionRequestTrigger SourceObject="{Binding CameraCapturingRequest}">
+			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+				<prism:PopupWindowAction.WindowContent>
+					<views:CameraCapturingView />
+				</prism:PopupWindowAction.WindowContent>
+			</prism:PopupWindowAction>
+		</prism:InteractionRequestTrigger>
+
 	</i:Interaction.Triggers>
 
 	<DockPanel>

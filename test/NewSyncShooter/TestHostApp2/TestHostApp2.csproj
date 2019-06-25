@@ -62,14 +62,23 @@
     <Compile Include="Models\CameraTreeItem.cs" />
     <Compile Include="Models\FileTreeItem.cs" />
     <Compile Include="Models\Project.cs" />
+    <Compile Include="Notifications\CameraCapturingNotification.cs" />
     <Compile Include="Notifications\NewProjectNotification.cs" />
+    <Compile Include="ViewModels\CameraCapturingViewModel.cs" />
     <Compile Include="ViewModels\NewProjectViewModel.cs" />
+    <Compile Include="Views\CameraCapturingView.xaml.cs">
+      <DependentUpon>CameraCapturingView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\NewProjectView.xaml.cs">
       <DependentUpon>NewProjectView.xaml</DependentUpon>
     </Compile>
     <Page Include="Views\CameraConnectionView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\CameraCapturingView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

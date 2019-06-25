@@ -65,9 +65,9 @@ namespace TestHostApp2.ViewModels
 			set {
 				SetProperty( ref _notification, (IConfirmation) value );
 				NewProjectNotification notification = _notification as NewProjectNotification;
-				BaseFolderPath.Value = notification.Project.BaseFolderPath;
-				ProjectName.Value = notification.Project.ProjectName;
-				Comment.Value = notification.Project.Comment;
+				this.BaseFolderPath.Value = notification.Project.BaseFolderPath;
+				this.ProjectName.Value = notification.Project.ProjectName;
+				this.Comment.Value = notification.Project.Comment;
 			}
 		}
 	}

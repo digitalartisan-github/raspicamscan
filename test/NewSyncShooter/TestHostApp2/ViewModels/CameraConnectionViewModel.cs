@@ -2,12 +2,6 @@
 using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Interactivity.InteractionRequest;
-using TestHostApp2.Notifications;
-
-using Reactive.Bindings;
-using System.Collections.Generic;
-using System.Linq;
-using NewSyncShooter;
 
 namespace TestHostApp2.ViewModels
 {
