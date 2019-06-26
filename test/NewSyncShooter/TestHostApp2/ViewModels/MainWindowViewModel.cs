@@ -11,8 +11,9 @@ using Prism.Mvvm;
 using Prism.Commands;
 using Prism.Interactivity.InteractionRequest;
 using Reactive.Bindings;
-using Reactive.Bindings.Extensions;
-using Ookii.Dialogs.Wpf;
+using PrismCommonDialog;
+using PrismCommonDialog.Confirmations;
+//using Ookii.Dialogs.Wpf;
 using TestHostApp2.Notifications;
 using TestHostApp2.Models;
 
@@ -70,6 +71,7 @@ namespace TestHostApp2.ViewModels
 
 		public InteractionRequest<INotification> NewProjectRequest { get; set; }
 		public DelegateCommand NewProjectCommand { get; set; }
+		public InteractionRequest<INotification> OpenFolderRequest { get; set; }
 		public DelegateCommand OpenFolderCommand { get; set; }
 		public InteractionRequest<INotification> CameraConnectionRequest { get; set; }
 		public DelegateCommand CameraConnectionCommand { get; set; }
@@ -99,6 +101,7 @@ namespace TestHostApp2.ViewModels
 			MessageBoxRequest = new InteractionRequest<INotification>();
 			NewProjectRequest = new InteractionRequest<INotification>();
 			NewProjectCommand = new DelegateCommand( RaiseNewProjectCommand );
+			OpenFolderRequest = new InteractionRequest<INotification>();
 			OpenFolderCommand = new DelegateCommand( RaiseOpenFolderCommand );
 			CameraConnectionRequest = new InteractionRequest<INotification>();
 			CameraConnectionCommand = new DelegateCommand( RaiseCameraConnection );
@@ -113,16 +116,17 @@ namespace TestHostApp2.ViewModels
 			CameraLeftCommand = new DelegateCommand( RaiseCameraLeft );
 			NetworkSettingCommand = new DelegateCommand( RaiseNetworkSetting );
 
-			// Previewing timer を 100msecでセット
+			// Previewing timer を 500msecでセット
 			_previewingTimer = new DispatcherTimer( DispatcherPriority.Render );
-			_previewingTimer.Interval = TimeSpan.FromMilliseconds( 100 );
-			_previewingTimer.Tick += ( sender, args ) => {
+			_previewingTimer.Interval = TimeSpan.FromMilliseconds( 500 );
+			_previewingTimer.Tick += ( sender, args ) =>
+			{
 				try {
 					byte[] data = _newSyncShooter.GetPreviewImageFront();
-					if (data.Length > 0) {
+					if ( data.Length > 0 ) {
 						ShowPreviewImage( data );
 					}
-				} catch (Exception e) {
+				} catch ( Exception ) {
 					//MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
 				}
 			};
@@ -136,7 +140,7 @@ namespace TestHostApp2.ViewModels
 			var notification = new NewProjectNotification { Title = "New Project" };
 			notification.Project = _project;
 			NewProjectRequest.Raise( notification );
-			if (notification.Confirmed) {
+			if ( notification.Confirmed ) {
 				_project = notification.Project;
 				if ( Directory.Exists( _project.ProjectFolderPath ) ) {
 					SowInformationMessage( _project.ProjectFolderPath + "は既に存在しています。新しい名前を指定してください。" );
@@ -160,17 +164,20 @@ namespace TestHostApp2.ViewModels
 		/// </summary>
 		void RaiseOpenFolderCommand()
 		{
-			VistaFolderBrowserDialog dlg = new VistaFolderBrowserDialog();
-			dlg.SelectedPath = _project.BaseFolderPath;
-			dlg.RootFolder = Environment.SpecialFolder.Personal;
-			dlg.ShowNewFolderButton = true;
-			var response = dlg.ShowDialog();
-			if ( response.HasValue && response.Value ) {
-				// dlg.SelectedPath の最後のディレクトリ名をプロジェクト名に
+			var notification = new FolderSelectDialogConfirmation()
+			{
+				Title = "Open Project",
+				SelectedPath = _project.BaseFolderPath,
+				RootFolder = Environment.SpecialFolder.Personal,
+				ShowNewFolderButton = false
+			};
+			OpenFolderRequest.Raise( notification );
+			if ( notification.Confirmed ) {
+				// SelectedPath の最後のディレクトリ名をプロジェクト名に
 				// その前までをベースフォルダに
-				int lastPos = dlg.SelectedPath.LastIndexOf("\\");
-				_project.ProjectName = dlg.SelectedPath.Substring( lastPos + 1 );
-				_project.BaseFolderPath = dlg.SelectedPath.Substring( 0, lastPos + 1 );
+				int lastPos = notification.SelectedPath.LastIndexOf("\\");
+				_project.ProjectName = notification.SelectedPath.Substring( lastPos + 1 );
+				_project.BaseFolderPath = notification.SelectedPath.Substring( 0, lastPos + 1 );
 
 				FileTree.Clear();
 				FileTree.Add( new FileTreeItem( _project.ProjectFolderPath ) );
@@ -185,7 +192,8 @@ namespace TestHostApp2.ViewModels
 		{
 			var notification = new CameraConnectionNotification { Title = "Camera Connection" };
 			_connectedIPAddressList.Clear();
-			_newSyncShooter.ConnectCamera().ToList().ForEach( adrs => {
+			_newSyncShooter.ConnectCamera().ToList().ForEach( adrs =>
+			{
 				_connectedIPAddressList.Add( adrs );
 				notification.ConnectedItems.Add( adrs );
 			} );
@@ -208,7 +216,8 @@ namespace TestHostApp2.ViewModels
 		{
 			IsCameraPreviwing = false;
 			// TODO: 仕様を確認すること
-			_connectedIPAddressList.ToList().ForEach( adrs => {
+			_connectedIPAddressList.ToList().ForEach( adrs =>
+			{
 				var param = _newSyncShooter.GetCameraParam( adrs );
 				param.Orientation = 1;
 				_newSyncShooter.SetCameraParam( adrs, param );
@@ -222,7 +231,7 @@ namespace TestHostApp2.ViewModels
 		{
 			var notification = new CameraCapturingNotification { Title = "撮影番号設定" };
 			CameraCapturingRequest.Raise( notification );
-			if ( ! notification.Confirmed ) {
+			if ( !notification.Confirmed ) {
 				return;
 			}
 
@@ -256,7 +265,7 @@ namespace TestHostApp2.ViewModels
 				TimeSpan ts = DateTime.Now - t;
 				SowInformationMessage( sTargetDir + "\n\nElapsed: " + ts.ToString( "s\\.fff" ) + " sec" );
 
-			} catch (Exception e) {
+			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
 			}
 		}

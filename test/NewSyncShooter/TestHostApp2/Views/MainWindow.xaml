@@ -6,12 +6,17 @@
 							xmlns:views="clr-namespace:TestHostApp2.Views"
 							xmlns:vm="clr-namespace:TestHostApp2.ViewModels"
 							xmlns:prism="http://prismlibrary.com/"
-							xmlns:dlg="clr-namespace:Ookii.Dialogs.Wpf;assembly=Ookii.Dialogs.Wpf"
+              xmlns:dlg="clr-namespace:Ookii.Dialogs.Wpf;assembly=Ookii.Dialogs.Wpf"
+              xmlns:cmDlg="clr-namespace:PrismCommonDialog;assembly=PrismCommonDialogLib"
 							prism:ViewModelLocator.AutoWireViewModel="True"
 							Title="{Binding Title.Value}" Height="640" Width="1048">
 
 	<i:Interaction.Triggers>
-		<prism:InteractionRequestTrigger SourceObject="{Binding MessageBoxRequest}">
+    <prism:InteractionRequestTrigger SourceObject="{Binding OpenFolderRequest}">
+      <cmDlg:PopupCommonDialogAction CommonDialogType="{x:Type dlg:VistaFolderBrowserDialog}" />
+    </prism:InteractionRequestTrigger>
+
+    <prism:InteractionRequestTrigger SourceObject="{Binding MessageBoxRequest}">
 			<prism:PopupWindowAction IsModal="True" WindowStartupLocation="CenterOwner">
 				<prism:PopupWindowAction.WindowStyle>
 					<Style TargetType="Window">
