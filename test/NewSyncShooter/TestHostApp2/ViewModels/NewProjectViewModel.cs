@@ -3,8 +3,9 @@ using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Interactivity.InteractionRequest;
 using Reactive.Bindings;
+using System.Reactive.Linq;
+using PrismCommonDialog.Confirmations;
 using TestHostApp2.Notifications;
-using Ookii.Dialogs.Wpf;
 
 namespace TestHostApp2.ViewModels
 {
@@ -15,32 +16,53 @@ namespace TestHostApp2.ViewModels
 
 		public ReactiveProperty<string> BaseFolderPath { get; set; } = new ReactiveProperty<string>( string.Empty );
 		public ReactiveProperty<string> ProjectName { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public ReadOnlyReactiveProperty<bool> IsProjectNameValid { get; }
 		public ReactiveProperty<string> Comment { get; set; } = new ReactiveProperty<string>( string.Empty );
 
+		public InteractionRequest<INotification> BrowseFolderRequest { get; set; }
 		public DelegateCommand BrowseFolderCommand { get; private set; }
 		public DelegateCommand OkCommand { get; private set; }
 		public DelegateCommand CancelCommand { get; private set; }
 
+		/// <summary>
+		/// コンストラクタ
+		/// </summary>
 		public NewProjectViewModel()
 		{
+			this.IsProjectNameValid = this.ProjectName.Select( n => ! string.IsNullOrEmpty( n ) ).ToReadOnlyReactiveProperty<bool>();
+			BrowseFolderRequest = new InteractionRequest<INotification>();
 			BrowseFolderCommand = new DelegateCommand( RaiseBrowseFolderCommand );
 			OkCommand = new DelegateCommand( OKInteraction );
 			CancelCommand = new DelegateCommand( CancelInteraction );
 		}
 
+		/// <summary>
+		/// [参照] ボタン
+		/// </summary>
 		private void RaiseBrowseFolderCommand()
 		{
 			NewProjectNotification notification = _notification as NewProjectNotification;
-
-			VistaFolderBrowserDialog dlg = new VistaFolderBrowserDialog();
-			dlg.SelectedPath = notification.Project.BaseFolderPath;
-			dlg.RootFolder = Environment.SpecialFolder.Personal;
-			dlg.ShowNewFolderButton = true;
-			var response = dlg.ShowDialog();
-			if ( response.HasValue && response.Value ) {
-				notification.Project.BaseFolderPath = dlg.SelectedPath;
-				BaseFolderPath.Value = notification.Project.BaseFolderPath;
+			var folderNotification = new FolderSelectDialogConfirmation()
+			{
+				SelectedPath = notification.Project.BaseFolderPath,
+				RootFolder = Environment.SpecialFolder.Personal,
+				ShowNewFolderButton = false,
+			};
+			BrowseFolderRequest.Raise( folderNotification );
+			if ( folderNotification.Confirmed ) {
+				BaseFolderPath.Value = notification.Project.BaseFolderPath = folderNotification.SelectedPath; ;
 			}
+
+			//NewProjectNotification notification = _notification as NewProjectNotification;
+			//VistaFolderBrowserDialog dlg = new VistaFolderBrowserDialog();
+			//dlg.SelectedPath = notification.Project.BaseFolderPath;
+			//dlg.RootFolder = Environment.SpecialFolder.Personal;
+			//dlg.ShowNewFolderButton = true;
+			//var response = dlg.ShowDialog();
+			//if ( response.HasValue && response.Value ) {
+			//	notification.Project.BaseFolderPath = dlg.SelectedPath;
+			//	BaseFolderPath.Value = notification.Project.BaseFolderPath;
+			//}
 		}
 
 		private void OKInteraction()

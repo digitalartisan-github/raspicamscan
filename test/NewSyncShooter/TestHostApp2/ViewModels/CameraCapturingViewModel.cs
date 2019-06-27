@@ -37,12 +37,6 @@ namespace TestHostApp2.ViewModels
 			FinishInteraction?.Invoke();
 		}
 
-		private void AcceptSelectedItem()
-		{
-			_notification.Confirmed = true;
-			FinishInteraction?.Invoke();
-		}
-
 		public INotification Notification
 		{
 			get { return _notification; }

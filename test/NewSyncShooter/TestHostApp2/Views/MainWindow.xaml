@@ -51,6 +51,22 @@
 			</prism:PopupWindowAction>
 		</prism:InteractionRequestTrigger>
 
+		<prism:InteractionRequestTrigger SourceObject="{Binding ThreeDBuildingOneRequest}">
+			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+				<prism:PopupWindowAction.WindowContent>
+					<views:ThreeDBuildingView />
+				</prism:PopupWindowAction.WindowContent>
+			</prism:PopupWindowAction>
+		</prism:InteractionRequestTrigger>
+
+		<prism:InteractionRequestTrigger SourceObject="{Binding ThreeDBuildingAllRequest}">
+			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+				<prism:PopupWindowAction.WindowContent>
+					<views:ThreeDBuildingView />
+				</prism:PopupWindowAction.WindowContent>
+			</prism:PopupWindowAction>
+		</prism:InteractionRequestTrigger>
+
 	</i:Interaction.Triggers>
 
 	<DockPanel>
@@ -75,51 +91,51 @@
         <RibbonGroup Header="カメラ">
 					<RibbonButton Label="検索" LargeImageSource="Images/camera_identification_60px.png" Command="{Binding CameraConnectionCommand}"/>
 					<RibbonToggleButton Label="プレビュー" LargeImageSource="Images/screenshot_60px.png" IsChecked="{Binding IsCameraPreviwing, Mode=TwoWay}" IsEnabled="{Binding IsCameraConnected.Value}"/>
-					<RibbonButton Label="設定" LargeImageSource="Images/camera_enhance_60px.png" Command="{Binding CameraSettingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+					<!--<RibbonButton Label="設定" LargeImageSource="Images/camera_enhance_60px.png" Command="{Binding CameraSettingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>-->
 					<RibbonButton Label="撮影" LargeImageSource="Images/multiple_cameras_60px.png" Command="{Binding CameraCapturingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
 					<RibbonButton Label="停止" LargeImageSource="Images/no_camera_60px.png" Command="{Binding CameraStopCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
 					<RibbonButton Label="再起動" LargeImageSource="Images/switch_camera_60px.png" Command="{Binding CameraRebootCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
 				</RibbonGroup>
 			  <RibbonGroup Header="設定">
-					<RibbonMenuButton Label="表示画像" LargeImageSource="Images/sophia_loren_60px.png">
-						<RibbonButton Label="正面カメラ" Command="{Binding CameraFrontCommand}"/>
-						<RibbonButton Label="背面カメラ" Command="{Binding CameraBackCommand}"/>
-						<RibbonButton Label="右側カメラ" Command="{Binding CameraRightCommand}"/>
-						<RibbonButton Label="左側カメラ" Command="{Binding CameraLeftCommand}"/>
+					<RibbonMenuButton Label="表示画像" LargeImageSource="Images/sophia_loren_60px.png" IsEnabled="{Binding IsCameraConnected.Value}">
+						<RibbonButton Label="正面カメラ" Command="{Binding CameraFrontCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+						<RibbonButton Label="背面カメラ" Command="{Binding CameraBackCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+						<RibbonButton Label="右側カメラ" Command="{Binding CameraRightCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+						<RibbonButton Label="左側カメラ" Command="{Binding CameraLeftCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
 					</RibbonMenuButton>
 					<RibbonButton Label="ネットワーク" LargeImageSource="Images/networking_manager_60px.png" Command="{Binding NetworkSettingCommand}"/>
 				</RibbonGroup>
 				<RibbonGroup Header="3D作成">
-					<RibbonButton Label="1ショット" Command="{Binding Build3dFromOneShotCommand}" IsEnabled="False"/>
-					<RibbonButton Label="全てのショット" Command="{Binding Build3dFromAllShotCommand}" IsEnabled="False"/>
-					<RibbonButton Label="作成中断" IsEnabled="False"/>
-					<RibbonButton Label="フォルダを開く" IsEnabled="False"/>
+					<RibbonButton Label="1ショット" LargeImageSource="Images/guest_filled_100px.png"
+												Command="{Binding ThreeDBuildingOneCommand}" IsEnabled="True"/>
+					<RibbonButton Label="全てのショット" LargeImageSource="Images/groups_filled_100px.png"
+												Command="{Binding ThreeDBuildingAllCommand}" IsEnabled="True"/>
+					<RibbonButton Label="作成中断" LargeImageSource="Images/remove_user_male_60px.png" IsEnabled="False"/>
+					<RibbonButton Label="フォルダを開く" LargeImageSource="Images/user_folder_100px.png" IsEnabled="False"/>
 				</RibbonGroup>
 			</RibbonTab>
 		</Ribbon>
 
 		<ad:DockingManager x:Name="_dockingManager" FocusManager.FocusedElement="{Binding ElementName=PreviewImage}">
+			<!--<ad:DockingManager.LayoutItemContainerStyle>
+				<Style TargetType="{x:Type ad:LayoutAnchorablePane}" >
+					<Setter Property="IsSelected" Value="{Binding Model.ContentIsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+				</Style>
+			</ad:DockingManager.LayoutItemContainerStyle>-->
+
 			<ad:LayoutRoot>
 				<ad:LayoutPanel Orientation="Horizontal">
 					<ad:LayoutAnchorablePaneGroup DockWidth="200" Orientation="Vertical">
 						<ad:LayoutAnchorablePane>
 							<ad:LayoutAnchorable x:Name="FolderPane" Title="ファイル ビュー" IconSource="Images/picture_15px.png"
-																	 CanHide="False" CanClose="False">
-								<TreeView ItemsSource="{Binding FileTree}">
-									<TreeView.Resources>
-										<Style TargetType="TreeViewItem">
-											<Setter Property="IsExpanded" Value="{Binding IsExpanded.Value, Mode=TwoWay}" />
-										</Style>
-									</TreeView.Resources>
+																	 CanHide="False" CanClose="False" IsSelected="False">
+								<TreeView ItemsSource="{Binding FileTree}" SelectedItemChanged="TreeView_SelectedItemChanged">
 								</TreeView>
 							</ad:LayoutAnchorable>
 							<ad:LayoutAnchorable x:Name="CameraPane" Title="カメラ ビュー" IconSource="Images/camera_15px.png"
-																	 CanHide="False" CanClose="False">
+																	 CanHide="False" CanClose="False" IsSelected="True">
 								<TreeView ItemsSource="{Binding CameraTree}">
 									<TreeView.Resources>
-										<Style TargetType="TreeViewItem">
-											<Setter Property="IsExpanded" Value="{Binding IsExpanded.Value, Mode=TwoWay}" />
-										</Style>
 									</TreeView.Resources>
 								</TreeView>
 							</ad:LayoutAnchorable>

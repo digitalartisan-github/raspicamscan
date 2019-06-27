@@ -7,29 +7,34 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Net.NetworkInformation;
+using System.Diagnostics;
 using Prism.Mvvm;
 using Prism.Commands;
 using Prism.Interactivity.InteractionRequest;
 using Reactive.Bindings;
-using PrismCommonDialog;
+using System.Reactive.Linq;
+using System.Reactive.Disposables;
 using PrismCommonDialog.Confirmations;
-//using Ookii.Dialogs.Wpf;
 using TestHostApp2.Notifications;
 using TestHostApp2.Models;
 
 namespace TestHostApp2.ViewModels
 {
-	public class MainWindowViewModel : BindableBase
+	public class MainWindowViewModel : BindableBase, IDisposable
 	{
+		private CompositeDisposable Disposable { get; } = new CompositeDisposable();
+
 		NewSyncShooter.NewSyncShooter _newSyncShooter;
 		List<string> _connectedIPAddressList;
-		Project _project;
 		bool _isCameraPreviwing;
 		DispatcherTimer _previewingTimer;
 
 		public ReactiveProperty<string> Title { get; private set; } = new ReactiveProperty<string>( "NewSyncShooter" );
+		public ReactiveProperty<Project> Project { get; set; } = new ReactiveProperty<Project>( new Models.Project() );
+		public ReactiveProperty<string> ProjectName { get; set; }
 		public ReactiveProperty<bool> IsCameraConnected { get; private set; } = new ReactiveProperty<bool>( false );
 		public ReactiveProperty<BitmapSource> PreviewingImage { get; private set; } = new ReactiveProperty<BitmapSource>();
+		public ReactiveProperty<bool> IsEnableBuild3D { get; }
 		public ObservableCollection<FileTreeItem> FileTree { get; } = new ObservableCollection<FileTreeItem>();
 		public ObservableCollection<CameraTreeItem> CameraTree { get; } = new ObservableCollection<CameraTreeItem>();
 		public ReactiveProperty<bool> IsExpanded { get; set; }
@@ -85,17 +90,27 @@ namespace TestHostApp2.ViewModels
 		public DelegateCommand CameraRightCommand { get; set; }
 		public DelegateCommand CameraLeftCommand { get; set; }
 		public DelegateCommand NetworkSettingCommand { get; set; }
+		public InteractionRequest<INotification> ThreeDBuildingOneRequest { get; set; }
+		public DelegateCommand ThreeDBuildingOneCommand { get; set; }
+		public InteractionRequest<INotification> ThreeDBuildingAllRequest { get; set; }
+		public DelegateCommand ThreeDBuildingAllCommand { get; set; }
 
+		public void Dispose()
+		{
+			this.Disposable.Dispose();
+		}
+
+		/// <summary>
+		/// コンストラクタ
+		/// </summary>
 		public MainWindowViewModel()
 		{
 			_newSyncShooter = new NewSyncShooter.NewSyncShooter();
 			_newSyncShooter.Initialize( "syncshooterDefs.json" );
-
-			_project = new Project();
-
 			_connectedIPAddressList = new List<string>();
 			_isCameraPreviwing = false;
 
+			this.IsEnableBuild3D = this.Project.Select( p => !string.IsNullOrEmpty( p.ProjectName ) ).ToReactiveProperty<bool>();
 			this.IsExpanded = new ReactiveProperty<bool>( true );
 
 			MessageBoxRequest = new InteractionRequest<INotification>();
@@ -115,6 +130,10 @@ namespace TestHostApp2.ViewModels
 			CameraRightCommand = new DelegateCommand( RaiseCameraRight );
 			CameraLeftCommand = new DelegateCommand( RaiseCameraLeft );
 			NetworkSettingCommand = new DelegateCommand( RaiseNetworkSetting );
+			ThreeDBuildingOneRequest = new InteractionRequest<INotification>();
+			ThreeDBuildingOneCommand = new DelegateCommand( RaiseThreeDBuildingOne );
+			ThreeDBuildingAllRequest = new InteractionRequest<INotification>();
+			ThreeDBuildingAllCommand = new DelegateCommand( RaiseThreeDBuildingAll );
 
 			// Previewing timer を 500msecでセット
 			_previewingTimer = new DispatcherTimer( DispatcherPriority.Render );
@@ -138,23 +157,22 @@ namespace TestHostApp2.ViewModels
 		void RaiseNewProjectCommand()
 		{
 			var notification = new NewProjectNotification { Title = "New Project" };
-			notification.Project = _project;
+			notification.Project = this.Project.Value;
 			NewProjectRequest.Raise( notification );
 			if ( notification.Confirmed ) {
-				_project = notification.Project;
-				if ( Directory.Exists( _project.ProjectFolderPath ) ) {
-					SowInformationMessage( _project.ProjectFolderPath + "は既に存在しています。新しい名前を指定してください。" );
+				this.Project.Value = notification.Project;
+				if ( Directory.Exists( this.Project.Value.ProjectFolderPath ) ) {
+					SowInformationMessage( this.Project.Value.ProjectFolderPath + "は既に存在しています。新しい名前を指定してください。" );
 				} else {
-					Directory.CreateDirectory( _project.ProjectFolderPath );
+					Directory.CreateDirectory( this.Project.Value.ProjectFolderPath );
 					// コメントを出力
-					using ( var fs = new FileStream( Path.Combine( _project.ProjectFolderPath, "Comment.txt" ), FileMode.CreateNew ) ) {
+					using ( var fs = new FileStream( Path.Combine( this.Project.Value.ProjectFolderPath, "Comment.txt" ), FileMode.CreateNew ) ) {
 						using ( var sw = new StreamWriter( fs ) ) {
-							sw.WriteLine( _project.Comment );
+							sw.WriteLine( this.Project.Value.Comment );
 						}
 					}
 					FileTree.Clear();
-					FileTree.Add( new FileTreeItem( _project.ProjectFolderPath ) );
-					IsExpanded.Value = true;
+					FileTree.Add( new FileTreeItem( this.Project.Value.ProjectFolderPath ) );
 				}
 			}
 		}
@@ -166,8 +184,7 @@ namespace TestHostApp2.ViewModels
 		{
 			var notification = new FolderSelectDialogConfirmation()
 			{
-				Title = "Open Project",
-				SelectedPath = _project.BaseFolderPath,
+				SelectedPath = this.Project.Value.BaseFolderPath,
 				RootFolder = Environment.SpecialFolder.Personal,
 				ShowNewFolderButton = false
 			};
@@ -176,12 +193,13 @@ namespace TestHostApp2.ViewModels
 				// SelectedPath の最後のディレクトリ名をプロジェクト名に
 				// その前までをベースフォルダに
 				int lastPos = notification.SelectedPath.LastIndexOf("\\");
-				_project.ProjectName = notification.SelectedPath.Substring( lastPos + 1 );
-				_project.BaseFolderPath = notification.SelectedPath.Substring( 0, lastPos + 1 );
+				Project project = this.Project.Value;
+				project.ProjectName = notification.SelectedPath.Substring( lastPos + 1 );
+				project.BaseFolderPath = notification.SelectedPath.Substring( 0, lastPos + 1 );
+				this.Project.Value = project;
 
 				FileTree.Clear();
-				FileTree.Add( new FileTreeItem( _project.ProjectFolderPath ) );
-				IsExpanded.Value = true;
+				FileTree.Add( new FileTreeItem( this.Project.Value.ProjectFolderPath ) );
 			}
 		}
 
@@ -237,7 +255,7 @@ namespace TestHostApp2.ViewModels
 
 			// 撮影フォルダ名：
 			// プロジェクトのフォルダ名＋現在の年月日時分秒＋撮影番号からなるフォルダ名のフォルダに画像を保存する
-			string sTargetDir = Path.Combine( _project.ProjectFolderPath,
+			string sTargetDir = Path.Combine( this.Project.Value.ProjectFolderPath,
 				DateTime.Now.ToString("yyyyMMdd-HHmmss") + string.Format("({0})", notification.CapturingName) );
 			try {
 				Directory.CreateDirectory( sTargetDir );
@@ -259,7 +277,7 @@ namespace TestHostApp2.ViewModels
 
 				// 「ファイルビュー」表示を更新
 				FileTree.Clear();
-				FileTree.Add( new FileTreeItem( _project.ProjectFolderPath ) );
+				FileTree.Add( new FileTreeItem( this.Project.Value.ProjectFolderPath ) );
 				IsExpanded.Value = true;
 
 				TimeSpan ts = DateTime.Now - t;
@@ -294,10 +312,10 @@ namespace TestHostApp2.ViewModels
 				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_front.bmp" ) );
-					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-						fs.Write( data, 0, (int) data.Length );
-					}
+					//String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_front.bmp" ) );
+					//using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+					//	fs.Write( data, 0, (int) data.Length );
+					//}
 				}
 			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
@@ -312,10 +330,10 @@ namespace TestHostApp2.ViewModels
 				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_back.bmp" ) );
-					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-						fs.Write( data, 0, (int) data.Length );
-					}
+					//String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_back.bmp" ) );
+					//using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+					//	fs.Write( data, 0, (int) data.Length );
+					//}
 				}
 			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
@@ -330,10 +348,10 @@ namespace TestHostApp2.ViewModels
 				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_right.bmp" ) );
-					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-						fs.Write( data, 0, (int) data.Length );
-					}
+					//String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_right.bmp" ) );
+					//using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+					//	fs.Write( data, 0, (int) data.Length );
+					//}
 				}
 			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
@@ -348,10 +366,10 @@ namespace TestHostApp2.ViewModels
 				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_left.bmp" ) );
-					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-						fs.Write( data, 0, (int) data.Length );
-					}
+					//String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_left.bmp" ) );
+					//using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+					//	fs.Write( data, 0, (int) data.Length );
+					//}
 				}
 			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
@@ -367,10 +385,64 @@ namespace TestHostApp2.ViewModels
 
 		void RaiseNetworkSetting()
 		{
+			// TEST
 			if ( NetworkInterface.GetIsNetworkAvailable() ) {
 				MessageBox.Show( "ネットワークに接続されています", this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Information );
 			} else {
 				MessageBox.Show( "ネットワークに接続されていません", this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Warning );
+			}
+		}
+
+		/// <summary>
+		/// 3D作成 - ワンショット
+		/// </summary>
+		void RaiseThreeDBuildingOne()
+		{
+			var notification = new ThreeDBuildingNotification
+			{
+				Title = "3Dモデル作成",
+				IsEnableSkipAlreadyBuilt = false,
+				ImageFolderPath = this.Project.Value.ProjectFolderPath,	// TODO: プロジェクトフォルダの下の、TreeView上で選択中の画像フォルダ
+				Output3DFolderPath = this.Project.Value.ThreeDDataFolderPath,
+			};
+			ThreeDBuildingOneRequest.Raise( notification );
+			if ( !notification.Confirmed ) {
+				this.Project.Value.ThreeDDataFolderPath = notification.Output3DFolderPath;
+
+				ProcessStartInfo startInfo = new ProcessStartInfo();
+				// バッチファイルを起動する人は、cmd.exeさんなので
+				startInfo.FileName = "cmd.exe";
+				// コマンド処理実行後、コマンドウィンドウ終わるようにする。
+				//（↓「/c」の後の最後のスペース1文字は重要！）
+				startInfo.Arguments = "/c ";
+				// コマンド処理であるバッチファイル （ここも最後のスペース重要）
+				startInfo.Arguments += @"..\..\UserRibbonButtons\button1.bat ";
+				// バッチファイルへの引数 
+				var srgString = this.Project.Value.ProjectFolderPath + " " + this.Project.Value.ThreeDDataFolderPath;
+				startInfo.Arguments += srgString;
+				// ●バッチファイルを別プロセスとして起動
+				var proc = Process.Start(startInfo);
+				// ●上記バッチ処理が終了するまで待ちます。
+				proc.WaitForExit();
+			}
+		}
+
+		/// <summary>
+		/// 3D作成 - 全てのショット
+		/// </summary>
+		void RaiseThreeDBuildingAll()
+		{
+			var notification = new ThreeDBuildingNotification
+			{
+				Title = "3Dモデル作成",
+				IsEnableSkipAlreadyBuilt = true,
+				ImageFolderPath = this.Project.Value.ProjectFolderPath,
+				Output3DFolderPath = this.Project.Value.ThreeDDataFolderPath,
+			};
+			ThreeDBuildingOneRequest.Raise( notification );
+			if ( !notification.Confirmed ) {
+				this.Project.Value.ThreeDDataFolderPath = notification.Output3DFolderPath;
+				return;
 			}
 		}
 	}

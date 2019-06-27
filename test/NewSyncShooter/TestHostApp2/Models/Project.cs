@@ -1,25 +1,56 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
+using Prism.Mvvm;
 
 namespace TestHostApp2.Models
 {
-	public class Project
+	public class Project : BindableBase
 	{
-		public string BaseFolderPath { get; set; }
-		public string ProjectName { get; set; }
+		private string _projectName = string.Empty;
+		private string _baseFolderPath = string.Empty;
+
+		// プロジェクト名
+		public string ProjectName
+		{
+			get { return _projectName; }
+			set
+			{
+				SetProperty( ref _projectName, value );
+				updateThreeDDataFolderPath();
+			}
+		}
+
+		// プロジェクトのベースフォルダパス
+		public string BaseFolderPath
+		{
+			get { return _baseFolderPath; }
+			set
+			{
+				SetProperty( ref _baseFolderPath, value );
+				updateThreeDDataFolderPath();
+			}
+		}
+
+		// コメント
 		public string Comment { get; set; } = string.Empty;
+
+		// プロジェクトのベースフォルダパス＋プロジェクト名からなるフォルダのパス名
 		public string ProjectFolderPath
 		{
-			get { return System.IO.Path.Combine( BaseFolderPath, ProjectName ); }
+			get { return Path.Combine( BaseFolderPath, ProjectName ); }
+		}
+		
+		// 3Dデータ作成フォルダ
+		public string ThreeDDataFolderPath { get; set; }
+
+		private void updateThreeDDataFolderPath()
+		{
+			ThreeDDataFolderPath = Path.Combine( ProjectFolderPath, "ThreeD" );
 		}
 
 		public Project()
 		{
 			BaseFolderPath = System.Environment.GetFolderPath( Environment.SpecialFolder.Personal );
-			ProjectName = "NewProject01";
 		}
 	}
 }
