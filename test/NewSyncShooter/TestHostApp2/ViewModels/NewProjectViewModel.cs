@@ -17,7 +17,7 @@ namespace TestHostApp2.ViewModels
 		public ReactiveProperty<string> BaseFolderPath { get; set; } = new ReactiveProperty<string>( string.Empty );
 		public ReactiveProperty<string> ProjectName { get; set; } = new ReactiveProperty<string>( string.Empty );
 		public ReadOnlyReactiveProperty<bool> IsProjectNameValid { get; }
-		public ReactiveProperty<string> Comment { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> ProjectComment { get; set; } = new ReactiveProperty<string>( string.Empty );
 
 		public InteractionRequest<INotification> BrowseFolderRequest { get; set; }
 		public DelegateCommand BrowseFolderCommand { get; private set; }
@@ -44,41 +44,30 @@ namespace TestHostApp2.ViewModels
 			NewProjectNotification notification = _notification as NewProjectNotification;
 			var folderNotification = new FolderSelectDialogConfirmation()
 			{
-				SelectedPath = notification.Project.BaseFolderPath,
+				SelectedPath = notification.BaseFolderPath,
 				RootFolder = Environment.SpecialFolder.Personal,
 				ShowNewFolderButton = false,
 			};
 			BrowseFolderRequest.Raise( folderNotification );
 			if ( folderNotification.Confirmed ) {
-				BaseFolderPath.Value = notification.Project.BaseFolderPath = folderNotification.SelectedPath; ;
+				BaseFolderPath.Value = notification.BaseFolderPath = folderNotification.SelectedPath;
 			}
-
-			//NewProjectNotification notification = _notification as NewProjectNotification;
-			//VistaFolderBrowserDialog dlg = new VistaFolderBrowserDialog();
-			//dlg.SelectedPath = notification.Project.BaseFolderPath;
-			//dlg.RootFolder = Environment.SpecialFolder.Personal;
-			//dlg.ShowNewFolderButton = true;
-			//var response = dlg.ShowDialog();
-			//if ( response.HasValue && response.Value ) {
-			//	notification.Project.BaseFolderPath = dlg.SelectedPath;
-			//	BaseFolderPath.Value = notification.Project.BaseFolderPath;
-			//}
 		}
 
 		private void OKInteraction()
 		{
 			NewProjectNotification notification = _notification as NewProjectNotification;
-			notification.Project.BaseFolderPath = BaseFolderPath.Value;
-			notification.Project.ProjectName = ProjectName.Value;
-			notification.Project.Comment = Comment.Value;
+			notification.BaseFolderPath = BaseFolderPath.Value;
+			notification.ProjectName = ProjectName.Value;
+			notification.ProjectComment = ProjectComment.Value;
 			_notification.Confirmed = true;
-			FinishInteraction?.Invoke();
+			FinishInteraction();
 		}
 
 		private void CancelInteraction()
 		{
 			_notification.Confirmed = false;
-			FinishInteraction?.Invoke();
+			FinishInteraction();
 		}
 
 		public INotification Notification
@@ -87,9 +76,9 @@ namespace TestHostApp2.ViewModels
 			set {
 				SetProperty( ref _notification, (IConfirmation) value );
 				NewProjectNotification notification = _notification as NewProjectNotification;
-				this.BaseFolderPath.Value = notification.Project.BaseFolderPath;
-				this.ProjectName.Value = notification.Project.ProjectName;
-				this.Comment.Value = notification.Project.Comment;
+				this.BaseFolderPath.Value = notification.BaseFolderPath;
+				this.ProjectName.Value = notification.ProjectName;
+				this.ProjectComment.Value = notification.ProjectComment;
 			}
 		}
 	}

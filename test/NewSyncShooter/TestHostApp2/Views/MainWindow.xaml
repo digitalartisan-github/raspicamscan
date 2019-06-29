@@ -51,6 +51,14 @@
 			</prism:PopupWindowAction>
 		</prism:InteractionRequestTrigger>
 
+		<prism:InteractionRequestTrigger SourceObject="{Binding NetworkSettingRequest}">
+			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+				<prism:PopupWindowAction.WindowContent>
+					<views:NetworkSettingView />
+				</prism:PopupWindowAction.WindowContent>
+			</prism:PopupWindowAction>
+		</prism:InteractionRequestTrigger>
+
 		<prism:InteractionRequestTrigger SourceObject="{Binding ThreeDBuildingOneRequest}">
 			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
 				<prism:PopupWindowAction.WindowContent>
@@ -107,9 +115,9 @@
 				</RibbonGroup>
 				<RibbonGroup Header="3D作成">
 					<RibbonButton Label="1ショット" LargeImageSource="Images/guest_filled_100px.png"
-												Command="{Binding ThreeDBuildingOneCommand}" IsEnabled="True"/>
+												Command="{Binding ThreeDBuildingOneCommand}" IsEnabled="{Binding IsEnableBuild3D.Value}"/>
 					<RibbonButton Label="全てのショット" LargeImageSource="Images/groups_filled_100px.png"
-												Command="{Binding ThreeDBuildingAllCommand}" IsEnabled="True"/>
+												Command="{Binding ThreeDBuildingAllCommand}" IsEnabled="{Binding IsEnableBuild3D.Value}"/>
 					<RibbonButton Label="作成中断" LargeImageSource="Images/remove_user_male_60px.png" IsEnabled="False"/>
 					<RibbonButton Label="フォルダを開く" LargeImageSource="Images/user_folder_100px.png" IsEnabled="False"/>
 				</RibbonGroup>

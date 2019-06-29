@@ -63,9 +63,11 @@
     <Compile Include="Models\FileTreeItem.cs" />
     <Compile Include="Models\Project.cs" />
     <Compile Include="Notifications\CameraCapturingNotification.cs" />
+    <Compile Include="Notifications\NetworkSettingNotification.cs" />
     <Compile Include="Notifications\NewProjectNotification.cs" />
     <Compile Include="Notifications\ThreeDBuildingNotification.cs" />
     <Compile Include="ViewModels\CameraCapturingViewModel.cs" />
+    <Compile Include="ViewModels\NetworkSettingViewModel.cs" />
     <Compile Include="ViewModels\NewProjectViewModel.cs" />
     <Compile Include="ViewModels\ThreeDBuildingViewModel.cs" />
     <Compile Include="ViewModels\TreeViewItemViewModel.cs" />
@@ -74,6 +76,9 @@
     </Compile>
     <Compile Include="Views\NavigationTree.xaml.cs">
       <DependentUpon>NavigationTree.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\NetworkSettingView.xaml.cs">
+      <DependentUpon>NetworkSettingView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\NewProjectView.xaml.cs">
       <DependentUpon>NewProjectView.xaml</DependentUpon>
@@ -108,6 +113,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Views\NavigationTree.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\NetworkSettingView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

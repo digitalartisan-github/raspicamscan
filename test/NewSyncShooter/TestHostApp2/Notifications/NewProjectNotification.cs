@@ -5,7 +5,9 @@ namespace TestHostApp2.Notifications
 {
 	public class NewProjectNotification : Confirmation
 	{
-		public Project Project { get; set; }
+		public string BaseFolderPath { get; set; }
+		public string ProjectName { get; set; }
+		public string ProjectComment { get; set; }
 
 		public NewProjectNotification()
 		{

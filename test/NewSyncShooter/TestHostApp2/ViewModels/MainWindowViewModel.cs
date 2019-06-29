@@ -30,11 +30,17 @@ namespace TestHostApp2.ViewModels
 		DispatcherTimer _previewingTimer;
 
 		public ReactiveProperty<string> Title { get; private set; } = new ReactiveProperty<string>( "NewSyncShooter" );
-		public ReactiveProperty<Project> Project { get; set; } = new ReactiveProperty<Project>( new Models.Project() );
-		public ReactiveProperty<string> ProjectName { get; set; }
+		public ReactiveProperty<string> ProjectName { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> BaseFolderPath { get; set; } = new ReactiveProperty<string>( System.Environment.GetFolderPath( Environment.SpecialFolder.Personal ) );
+		public ReactiveProperty<string> ProjectComment { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public ReadOnlyReactiveProperty<string> ProjectFolderPath { get; }
+		public ReactiveProperty<string> ThreeDDataFolderPath { get; set; } = new ReactiveProperty<string>( System.Environment.GetFolderPath( Environment.SpecialFolder.Personal ) );
 		public ReactiveProperty<bool> IsCameraConnected { get; private set; } = new ReactiveProperty<bool>( false );
 		public ReactiveProperty<BitmapSource> PreviewingImage { get; private set; } = new ReactiveProperty<BitmapSource>();
-		public ReactiveProperty<bool> IsEnableBuild3D { get; }
+		public ReadOnlyReactiveProperty<bool> IsEnableBuild3D { get; }
+		public ReactiveProperty<bool> IsCutPetTable { get; set; } = new ReactiveProperty<bool>( true );
+		public ReactiveProperty<bool> IsSkipAlreadyBuilt { get; set; } = new ReactiveProperty<bool>( true );
+
 		public ObservableCollection<FileTreeItem> FileTree { get; } = new ObservableCollection<FileTreeItem>();
 		public ObservableCollection<CameraTreeItem> CameraTree { get; } = new ObservableCollection<CameraTreeItem>();
 		public ReactiveProperty<bool> IsExpanded { get; set; }
@@ -89,6 +95,7 @@ namespace TestHostApp2.ViewModels
 		public DelegateCommand CameraBackCommand { get; set; }
 		public DelegateCommand CameraRightCommand { get; set; }
 		public DelegateCommand CameraLeftCommand { get; set; }
+		public InteractionRequest<INotification> NetworkSettingRequest { get; set; }
 		public DelegateCommand NetworkSettingCommand { get; set; }
 		public InteractionRequest<INotification> ThreeDBuildingOneRequest { get; set; }
 		public DelegateCommand ThreeDBuildingOneCommand { get; set; }
@@ -110,7 +117,8 @@ namespace TestHostApp2.ViewModels
 			_connectedIPAddressList = new List<string>();
 			_isCameraPreviwing = false;
 
-			this.IsEnableBuild3D = this.Project.Select( p => !string.IsNullOrEmpty( p.ProjectName ) ).ToReactiveProperty<bool>();
+			this.ProjectFolderPath = this.BaseFolderPath.CombineLatest( this.ProjectName, ( b, p ) => Path.Combine( b, p ) ).ToReadOnlyReactiveProperty();
+			this.IsEnableBuild3D = this.ProjectName.Select( p => !string.IsNullOrEmpty( p ) ).ToReadOnlyReactiveProperty<bool>();
 			this.IsExpanded = new ReactiveProperty<bool>( true );
 
 			MessageBoxRequest = new InteractionRequest<INotification>();
@@ -129,6 +137,7 @@ namespace TestHostApp2.ViewModels
 			CameraBackCommand = new DelegateCommand( RaiseCameraBack );
 			CameraRightCommand = new DelegateCommand( RaiseCameraRight );
 			CameraLeftCommand = new DelegateCommand( RaiseCameraLeft );
+			NetworkSettingRequest = new InteractionRequest<INotification>();
 			NetworkSettingCommand = new DelegateCommand( RaiseNetworkSetting );
 			ThreeDBuildingOneRequest = new InteractionRequest<INotification>();
 			ThreeDBuildingOneCommand = new DelegateCommand( RaiseThreeDBuildingOne );
@@ -157,22 +166,26 @@ namespace TestHostApp2.ViewModels
 		void RaiseNewProjectCommand()
 		{
 			var notification = new NewProjectNotification { Title = "New Project" };
-			notification.Project = this.Project.Value;
+			notification.ProjectName = this.ProjectName.Value;
+			notification.BaseFolderPath = this.BaseFolderPath.Value;
+			notification.ProjectComment = this.ProjectComment.Value;
 			NewProjectRequest.Raise( notification );
 			if ( notification.Confirmed ) {
-				this.Project.Value = notification.Project;
-				if ( Directory.Exists( this.Project.Value.ProjectFolderPath ) ) {
-					SowInformationMessage( this.Project.Value.ProjectFolderPath + "は既に存在しています。新しい名前を指定してください。" );
+				this.ProjectName.Value = notification.ProjectName;
+				this.BaseFolderPath.Value = notification.BaseFolderPath;
+				this.ProjectComment.Value = notification.ProjectComment;
+				if ( Directory.Exists( this.ProjectFolderPath.Value ) ) {
+					SowInformationMessage( this.ProjectFolderPath.Value + "は既に存在しています。新しい名前を指定してください。" );
 				} else {
-					Directory.CreateDirectory( this.Project.Value.ProjectFolderPath );
+					Directory.CreateDirectory( this.ProjectFolderPath.Value );
 					// コメントを出力
-					using ( var fs = new FileStream( Path.Combine( this.Project.Value.ProjectFolderPath, "Comment.txt" ), FileMode.CreateNew ) ) {
+					using ( var fs = new FileStream( Path.Combine( this.ProjectFolderPath.Value, "Comment.txt" ), FileMode.CreateNew ) ) {
 						using ( var sw = new StreamWriter( fs ) ) {
-							sw.WriteLine( this.Project.Value.Comment );
+							sw.WriteLine( this.ProjectComment.Value );
 						}
 					}
 					FileTree.Clear();
-					FileTree.Add( new FileTreeItem( this.Project.Value.ProjectFolderPath ) );
+					FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
 				}
 			}
 		}
@@ -184,7 +197,7 @@ namespace TestHostApp2.ViewModels
 		{
 			var notification = new FolderSelectDialogConfirmation()
 			{
-				SelectedPath = this.Project.Value.BaseFolderPath,
+				SelectedPath = this.BaseFolderPath.Value,
 				RootFolder = Environment.SpecialFolder.Personal,
 				ShowNewFolderButton = false
 			};
@@ -193,13 +206,11 @@ namespace TestHostApp2.ViewModels
 				// SelectedPath の最後のディレクトリ名をプロジェクト名に
 				// その前までをベースフォルダに
 				int lastPos = notification.SelectedPath.LastIndexOf("\\");
-				Project project = this.Project.Value;
-				project.ProjectName = notification.SelectedPath.Substring( lastPos + 1 );
-				project.BaseFolderPath = notification.SelectedPath.Substring( 0, lastPos + 1 );
-				this.Project.Value = project;
+				this.BaseFolderPath.Value = notification.SelectedPath.Substring( 0, lastPos + 1 );
+				this.ProjectName.Value = notification.SelectedPath.Substring( lastPos + 1 );
 
 				FileTree.Clear();
-				FileTree.Add( new FileTreeItem( this.Project.Value.ProjectFolderPath ) );
+				FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
 			}
 		}
 
@@ -255,7 +266,7 @@ namespace TestHostApp2.ViewModels
 
 			// 撮影フォルダ名：
 			// プロジェクトのフォルダ名＋現在の年月日時分秒＋撮影番号からなるフォルダ名のフォルダに画像を保存する
-			string sTargetDir = Path.Combine( this.Project.Value.ProjectFolderPath,
+			string sTargetDir = Path.Combine( this.ProjectFolderPath.Value,
 				DateTime.Now.ToString("yyyyMMdd-HHmmss") + string.Format("({0})", notification.CapturingName) );
 			try {
 				Directory.CreateDirectory( sTargetDir );
@@ -277,7 +288,7 @@ namespace TestHostApp2.ViewModels
 
 				// 「ファイルビュー」表示を更新
 				FileTree.Clear();
-				FileTree.Add( new FileTreeItem( this.Project.Value.ProjectFolderPath ) );
+				FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
 				IsExpanded.Value = true;
 
 				TimeSpan ts = DateTime.Now - t;
@@ -386,10 +397,15 @@ namespace TestHostApp2.ViewModels
 		void RaiseNetworkSetting()
 		{
 			// TEST
-			if ( NetworkInterface.GetIsNetworkAvailable() ) {
-				MessageBox.Show( "ネットワークに接続されています", this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Information );
-			} else {
-				MessageBox.Show( "ネットワークに接続されていません", this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Warning );
+			var notification = new NetworkSettingNotification { Title = "ネットワークインターフェイス選択" };
+			NetworkSettingRequest.Raise( notification );
+			if ( notification.Confirmed ) {
+
+				if ( NetworkInterface.GetIsNetworkAvailable() ) {
+					MessageBox.Show( "ネットワークに接続されています", this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Information );
+				} else {
+					MessageBox.Show( "ネットワークに接続されていません", this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Warning );
+				}
 			}
 		}
 
@@ -402,12 +418,15 @@ namespace TestHostApp2.ViewModels
 			{
 				Title = "3Dモデル作成",
 				IsEnableSkipAlreadyBuilt = false,
-				ImageFolderPath = this.Project.Value.ProjectFolderPath,	// TODO: プロジェクトフォルダの下の、TreeView上で選択中の画像フォルダ
-				Output3DFolderPath = this.Project.Value.ThreeDDataFolderPath,
+				ImageFolderPath = this.ProjectFolderPath.Value,	// TODO: プロジェクトフォルダの下の、TreeView上で選択中の画像フォルダ
+				Output3DFolderPath = this.ThreeDDataFolderPath.Value,
+				IsCutPetTable = this.IsCutPetTable.Value,
+				//IsSkipAlreadyBuilt = this.IsSkipAlreadyBuilt.Value,
 			};
 			ThreeDBuildingOneRequest.Raise( notification );
 			if ( !notification.Confirmed ) {
-				this.Project.Value.ThreeDDataFolderPath = notification.Output3DFolderPath;
+				this.ThreeDDataFolderPath.Value = notification.Output3DFolderPath;
+				this.IsCutPetTable.Value = notification.IsCutPetTable;
 
 				ProcessStartInfo startInfo = new ProcessStartInfo();
 				// バッチファイルを起動する人は、cmd.exeさんなので
@@ -418,7 +437,7 @@ namespace TestHostApp2.ViewModels
 				// コマンド処理であるバッチファイル （ここも最後のスペース重要）
 				startInfo.Arguments += @"..\..\UserRibbonButtons\button1.bat ";
 				// バッチファイルへの引数 
-				var srgString = this.Project.Value.ProjectFolderPath + " " + this.Project.Value.ThreeDDataFolderPath;
+				var srgString = this.ProjectFolderPath.Value + " " + this.ThreeDDataFolderPath.Value;
 				startInfo.Arguments += srgString;
 				// ●バッチファイルを別プロセスとして起動
 				var proc = Process.Start(startInfo);
@@ -436,13 +455,16 @@ namespace TestHostApp2.ViewModels
 			{
 				Title = "3Dモデル作成",
 				IsEnableSkipAlreadyBuilt = true,
-				ImageFolderPath = this.Project.Value.ProjectFolderPath,
-				Output3DFolderPath = this.Project.Value.ThreeDDataFolderPath,
+				ImageFolderPath = this.ProjectFolderPath.Value,
+				Output3DFolderPath = this.ThreeDDataFolderPath.Value,
+				IsCutPetTable = this.IsCutPetTable.Value,
+				IsSkipAlreadyBuilt = this.IsSkipAlreadyBuilt.Value,
 			};
 			ThreeDBuildingOneRequest.Raise( notification );
 			if ( !notification.Confirmed ) {
-				this.Project.Value.ThreeDDataFolderPath = notification.Output3DFolderPath;
-				return;
+				this.ThreeDDataFolderPath.Value = notification.Output3DFolderPath;
+				this.IsCutPetTable.Value = notification.IsCutPetTable;
+				this.IsSkipAlreadyBuilt.Value = notification.IsSkipAlreadyBuilt;
 			}
 		}
 	}
