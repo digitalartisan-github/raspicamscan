@@ -6,12 +6,11 @@ using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using Reactive.Bindings;
 
-namespace TestHostApp2.Models
+namespace TestHostApp2.ViewModels
 {
 	public class FileTreeItem : TreeViewItem
 	{
 		public DirectoryInfo _Directory { get; set; }
-		private bool _Expanded { get; set; } = false;
 		public ReactiveProperty<FileTreeItem> _SelectionItem { get; set; } = new ReactiveProperty<FileTreeItem>();
 
 		public FileTreeItem( string path, bool isRoot = true )
@@ -22,27 +21,17 @@ namespace TestHostApp2.Models
 				this._Directory = new DirectoryInfo( path );
 				if ( isRoot ) {
 					this.Header = CreateRootHeader();
-					if ( _Directory.GetDirectories().Count() > 0 ) {
-						this.Items.Add( new TreeViewItem() );
-						this.Expanded += TreeViewItem_Expanded;
+					if ( _Directory.GetDirectories().Length > 0 ) {
+						foreach ( DirectoryInfo dir in _Directory.GetDirectories() ) {
+							if ( dir.Attributes == FileAttributes.Directory ) {
+								this.Items.Add( new FileTreeItem( dir.FullName, false ) );
+							}
+						}
+						this.IsExpanded = true;
 					}
 				} else {
 					this.Header = CreatePictureFolderHeader();
 				}
-				this.Selected += Model_TreeViewItem_Selected;
-			}
-		}
-
-		private void TreeViewItem_Expanded( object sender, RoutedEventArgs e )
-		{
-			if ( !_Expanded ) {
-				this.Items.Clear();
-				foreach ( DirectoryInfo dir in _Directory.GetDirectories() ) {
-					if ( dir.Attributes == FileAttributes.Directory ) {
-						this.Items.Add( new FileTreeItem( dir.FullName, false ) );
-					}
-				}
-				_Expanded = true;
 			}
 		}
 
@@ -72,11 +61,6 @@ namespace TestHostApp2.Models
 			} );
 			sp.Children.Add( new TextBlock() { Text = _Directory.Name } );
 			return sp;
-		}
-
-		private void Model_TreeViewItem_Selected( object sender, RoutedEventArgs e )
-		{
-			_SelectionItem.Value = ( this.IsSelected ) ? this : (FileTreeItem) e.Source;
 		}
 	}
 }

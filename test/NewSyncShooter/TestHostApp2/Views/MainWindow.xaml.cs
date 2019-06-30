@@ -14,14 +14,5 @@ namespace TestHostApp2.Views
         {
             InitializeComponent();
         }
-
-		private void TreeView_SelectedItemChanged( object sender, RoutedPropertyChangedEventArgs<object> e )
-		{
-			var obj = sender as TreeView;
-			foreach (var item in obj.ItemsSource) {
-				var treeItem = item as TreeViewItem;
-				treeItem.IsExpanded = true;
-			}
-		}
 	}
 }

@@ -6,11 +6,28 @@
 							xmlns:views="clr-namespace:TestHostApp2.Views"
 							xmlns:vm="clr-namespace:TestHostApp2.ViewModels"
 							xmlns:prism="http://prismlibrary.com/"
-              xmlns:dlg="clr-namespace:Ookii.Dialogs.Wpf;assembly=Ookii.Dialogs.Wpf"
-              xmlns:cmDlg="clr-namespace:PrismCommonDialog;assembly=PrismCommonDialogLib"
+							xmlns:dlg="clr-namespace:Ookii.Dialogs.Wpf;assembly=Ookii.Dialogs.Wpf"
+							xmlns:cmDlg="clr-namespace:PrismCommonDialog;assembly=PrismCommonDialogLib"
 							prism:ViewModelLocator.AutoWireViewModel="True"
 							Title="{Binding Title.Value}" Height="640" Width="1048">
 
+	<RibbonWindow.Resources>
+		<ContextMenu x:Key="FileViewContextMenu">
+			<MenuItem Header="フォルダを開く"
+								Command="{Binding Path=PlacementTarget.Tag.FileViewOpenFolderCommand,
+												RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+								CommandParameter="{Binding Path=PlacementTarget.DataContext,
+												RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
+		</ContextMenu>
+		<ContextMenu x:Key="CameraViewContextMenu">
+			<MenuItem Header="画像表示"
+								Command="{Binding Path=PlacementTarget.Tag.CameraViewShowPictureCommand,
+												RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+								CommandParameter="{Binding Path=PlacementTarget.DataContext,
+												RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
+		</ContextMenu>
+	</RibbonWindow.Resources>
+	
 	<i:Interaction.Triggers>
     <prism:InteractionRequestTrigger SourceObject="{Binding OpenFolderRequest}">
       <cmDlg:PopupCommonDialogAction CommonDialogType="{x:Type dlg:VistaFolderBrowserDialog}" />
@@ -100,7 +117,7 @@
 					<RibbonButton Label="検索" LargeImageSource="Images/camera_identification_60px.png" Command="{Binding CameraConnectionCommand}"/>
 					<RibbonToggleButton Label="プレビュー" LargeImageSource="Images/screenshot_60px.png" IsChecked="{Binding IsCameraPreviwing, Mode=TwoWay}" IsEnabled="{Binding IsCameraConnected.Value}"/>
 					<!--<RibbonButton Label="設定" LargeImageSource="Images/camera_enhance_60px.png" Command="{Binding CameraSettingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>-->
-					<RibbonButton Label="撮影" LargeImageSource="Images/multiple_cameras_60px.png" Command="{Binding CameraCapturingCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+					<RibbonButton Label="撮影" LargeImageSource="Images/multiple_cameras_60px.png" Command="{Binding CameraCapturingCommand}" IsEnabled="{Binding IsEnableToCapture.Value}"/>
 					<RibbonButton Label="停止" LargeImageSource="Images/no_camera_60px.png" Command="{Binding CameraStopCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
 					<RibbonButton Label="再起動" LargeImageSource="Images/switch_camera_60px.png" Command="{Binding CameraRebootCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
 				</RibbonGroup>
@@ -115,9 +132,9 @@
 				</RibbonGroup>
 				<RibbonGroup Header="3D作成">
 					<RibbonButton Label="1ショット" LargeImageSource="Images/guest_filled_100px.png"
-												Command="{Binding ThreeDBuildingOneCommand}" IsEnabled="{Binding IsEnableBuild3D.Value}"/>
+												Command="{Binding ThreeDBuildingOneCommand}" IsEnabled="{Binding IsEnableToBuild3D.Value}"/>
 					<RibbonButton Label="全てのショット" LargeImageSource="Images/groups_filled_100px.png"
-												Command="{Binding ThreeDBuildingAllCommand}" IsEnabled="{Binding IsEnableBuild3D.Value}"/>
+												Command="{Binding ThreeDBuildingAllCommand}" IsEnabled="{Binding IsEnableToBuild3D.Value}"/>
 					<RibbonButton Label="作成中断" LargeImageSource="Images/remove_user_male_60px.png" IsEnabled="False"/>
 					<RibbonButton Label="フォルダを開く" LargeImageSource="Images/user_folder_100px.png" IsEnabled="False"/>
 				</RibbonGroup>
@@ -125,26 +142,30 @@
 		</Ribbon>
 
 		<ad:DockingManager x:Name="_dockingManager" FocusManager.FocusedElement="{Binding ElementName=PreviewImage}">
-			<!--<ad:DockingManager.LayoutItemContainerStyle>
-				<Style TargetType="{x:Type ad:LayoutAnchorablePane}" >
-					<Setter Property="IsSelected" Value="{Binding Model.ContentIsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-				</Style>
-			</ad:DockingManager.LayoutItemContainerStyle>-->
-
 			<ad:LayoutRoot>
 				<ad:LayoutPanel Orientation="Horizontal">
 					<ad:LayoutAnchorablePaneGroup DockWidth="200" Orientation="Vertical">
 						<ad:LayoutAnchorablePane>
 							<ad:LayoutAnchorable x:Name="FolderPane" Title="ファイル ビュー" IconSource="Images/picture_15px.png"
 																	 CanHide="False" CanClose="False" IsSelected="False">
-								<TreeView ItemsSource="{Binding FileTree}" SelectedItemChanged="TreeView_SelectedItemChanged">
+								<TreeView ItemsSource="{Binding FileTree}" views:TreeViewExtension.SelectItemOnRightClick="True">
+									<TreeView.ItemContainerStyle>
+										<Style TargetType="vm:FileTreeItem">
+											<Setter Property="Tag" Value="{Binding Path=DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type TreeView}}}"/>
+											<Setter Property="ContextMenu" Value="{Binding Source={StaticResource FileViewContextMenu}}"/>
+										</Style>
+									</TreeView.ItemContainerStyle>
 								</TreeView>
 							</ad:LayoutAnchorable>
 							<ad:LayoutAnchorable x:Name="CameraPane" Title="カメラ ビュー" IconSource="Images/camera_15px.png"
 																	 CanHide="False" CanClose="False" IsSelected="True">
-								<TreeView ItemsSource="{Binding CameraTree}">
-									<TreeView.Resources>
-									</TreeView.Resources>
+								<TreeView ItemsSource="{Binding CameraTree}" views:TreeViewExtension.SelectItemOnRightClick="True">
+									<TreeView.ItemContainerStyle>
+										<Style TargetType="vm:CameraTreeItem">
+											<Setter Property="Tag" Value="{Binding Path=DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type TreeView}}}"/>
+											<Setter Property="ContextMenu" Value="{Binding Source={StaticResource CameraViewContextMenu}}"/>
+										</Style>
+									</TreeView.ItemContainerStyle>
 								</TreeView>
 							</ad:LayoutAnchorable>
 						</ad:LayoutAnchorablePane>

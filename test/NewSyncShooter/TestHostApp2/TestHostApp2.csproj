@@ -59,14 +59,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Models\CameraTreeItem.cs" />
-    <Compile Include="Models\FileTreeItem.cs" />
     <Compile Include="Models\Project.cs" />
     <Compile Include="Notifications\CameraCapturingNotification.cs" />
     <Compile Include="Notifications\NetworkSettingNotification.cs" />
     <Compile Include="Notifications\NewProjectNotification.cs" />
     <Compile Include="Notifications\ThreeDBuildingNotification.cs" />
     <Compile Include="ViewModels\CameraCapturingViewModel.cs" />
+    <Compile Include="ViewModels\CameraTreeItem.cs" />
+    <Compile Include="ViewModels\FileTreeItem.cs" />
     <Compile Include="ViewModels\NetworkSettingViewModel.cs" />
     <Compile Include="ViewModels\NewProjectViewModel.cs" />
     <Compile Include="ViewModels\ThreeDBuildingViewModel.cs" />
@@ -86,6 +86,7 @@
     <Compile Include="Views\ThreeDBuildingView.xaml.cs">
       <DependentUpon>ThreeDBuildingView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\TreeViewExtension.cs" />
     <Page Include="Views\CameraConnectionView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
