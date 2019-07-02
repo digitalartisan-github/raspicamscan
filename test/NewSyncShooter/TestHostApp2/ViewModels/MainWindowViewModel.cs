@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -13,59 +12,196 @@ using Prism.Mvvm;
 using Prism.Commands;
 using Prism.Interactivity.InteractionRequest;
 using Reactive.Bindings;
+using Reactive.Bindings.Extensions;
 using System.Reactive.Linq;
 using System.Reactive.Disposables;
 using PrismCommonDialog.Confirmations;
 using TestHostApp2.Notifications;
-using TestHostApp2.Models;
 
 namespace TestHostApp2.ViewModels
 {
 	public class MainWindowViewModel : BindableBase, IDisposable
 	{
-		private CompositeDisposable Disposable { get; } = new CompositeDisposable();
+		private readonly CompositeDisposable _disposable = new CompositeDisposable();
 
-		NewSyncShooter.NewSyncShooter _newSyncShooter;
-		List<string> _connectedIPAddressList;
-		bool _isCameraPreviwing;
-		DispatcherTimer _previewingTimer;
+		private readonly string _registryBaseKey = @"Software\DiGITAL ARTISAN";
+		private readonly Models.Project _project = new Models.Project();
+		private NewSyncShooter.NewSyncShooter _newSyncShooter;
+		private List<string> _connectedIPAddressList;
+		private DispatcherTimer _previewingTimer;
 
+		#region Properties
 		public ReactiveProperty<string> Title { get; private set; } = new ReactiveProperty<string>( "NewSyncShooter" );
-		public ReactiveProperty<string> ProjectName { get; set; } = new ReactiveProperty<string>( string.Empty );
-		public ReactiveProperty<string> BaseFolderPath { get; set; } = new ReactiveProperty<string>( System.Environment.GetFolderPath( Environment.SpecialFolder.Personal ) );
-		public ReactiveProperty<string> ProjectComment { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> ProjectName;
+		public ReactiveProperty<string> BaseFolderPath;
+		public ReactiveProperty<string> ProjectComment;
+		public ReactiveProperty<string> ThreeDDataFolderPath;
+		public ReactiveProperty<bool> IsCutPetTable;
+		public ReactiveProperty<bool> IsSkipAlreadyBuilt;
 		public ReadOnlyReactiveProperty<string> ProjectFolderPath { get; }
-		public ReactiveProperty<string> ThreeDDataFolderPath { get; set; } = new ReactiveProperty<string>( System.Environment.GetFolderPath( Environment.SpecialFolder.Personal ) );
 		public ReactiveProperty<bool> IsCameraConnected { get; private set; } = new ReactiveProperty<bool>( false );
-		public ReadOnlyReactiveProperty<bool> IsEnableToCapture { get; }
+		public ReactiveProperty<bool> IsCameraPreviewing { get; set; } = new ReactiveProperty<bool>();
 		public ReactiveProperty<BitmapSource> PreviewingImage { get; private set; } = new ReactiveProperty<BitmapSource>();
-		public ReadOnlyReactiveProperty<bool> IsEnableToBuild3D { get; }
-		public ReactiveProperty<bool> IsCutPetTable { get; set; } = new ReactiveProperty<bool>( true );
-		public ReactiveProperty<bool> IsSkipAlreadyBuilt { get; set; } = new ReactiveProperty<bool>( true );
 		public ObservableCollection<FileTreeItem> FileTree { get; } = new ObservableCollection<FileTreeItem>();
 		public ObservableCollection<CameraTreeItem> CameraTree { get; } = new ObservableCollection<CameraTreeItem>();
+		#endregion
+
+		#region Window Request
+		public InteractionRequest<INotification> MessageBoxRequest { get; private set; }
+		public InteractionRequest<INotification> NewProjectRequest { get; set; }
+		public InteractionRequest<INotification> OpenFolderRequest { get; set; }
+		public InteractionRequest<INotification> CameraConnectionRequest { get; set; }
+		public InteractionRequest<INotification> CameraCapturingRequest { get; set; }
+		public InteractionRequest<INotification> ImageTransferingRequest { get; set; }
+		public InteractionRequest<INotification> NetworkSettingRequest { get; set; }
+		public InteractionRequest<INotification> ThreeDBuildingOneRequest { get; set; }
+		public InteractionRequest<INotification> ThreeDBuildingAllRequest { get; set; }
+		#endregion
+
+		public ReactiveCommand NewProjectCommand { get; }
+		public ReactiveCommand OpenFolderCommand { get; }
+		public ReactiveCommand CameraConnectionCommand { get; }
+		public ReactiveCommand CameraSettingCommand { get; }
+		public ReactiveCommand CameraCapturingCommand { get; }
+		public ReactiveCommand ImageTransferingCommand { get; }
+		public ReactiveCommand CameraStopCommand { get; }
+		public ReactiveCommand CameraRebootCommand { get; }
+		public ReactiveCommand CameraFrontCommand { get; }
+		public ReactiveCommand CameraBackCommand { get; }
+		public ReactiveCommand CameraRightCommand { get; }
+		public ReactiveCommand CameraLeftCommand { get; }
+		public ReactiveCommand NetworkSettingCommand { get; }
+		public ReactiveCommand ThreeDBuildingOneCommand { get; }
+		public ReactiveCommand ThreeDBuildingAllCommand { get; }
+		public ReactiveCommand ThreeDDataFolderOpeningCommand { get; }
+		public ReactiveCommand FileViewOpenFolderCommand { get; }
+		public ReactiveCommand FileViewDeleteFolderCommand { get; }
+		public ReactiveCommand CameraViewShowPictureCommand { get; }
+
+		public void Dispose()
+		{
+			_disposable?.Dispose();
+		}
 
 		/// <summary>
-		/// カメラプレビュー中か
+		/// コンストラクタ
 		/// </summary>
-		public bool IsCameraPreviwing
+		public MainWindowViewModel()
 		{
-			get { return _isCameraPreviwing; }
-			set
-			{
-				_isCameraPreviwing = value;
-				if ( _isCameraPreviwing ) {
+			_newSyncShooter = new NewSyncShooter.NewSyncShooter();
+			_newSyncShooter.Initialize( "syncshooterDefs.json" );
+			_connectedIPAddressList = new List<string>();
+
+			// Previewing timer を 500msecでセット
+			_previewingTimer = new DispatcherTimer( DispatcherPriority.Render );
+			_previewingTimer.Interval = TimeSpan.FromMilliseconds( 500 );
+			_previewingTimer.Tick += ( sender, args ) => {
+				try {
+					byte[] data = _newSyncShooter.GetPreviewImageFront();
+					if ( data.Length > 0 ) {
+						ShowPreviewImage( data );
+					}
+				} catch ( Exception e ) {
+					Console.WriteLine( e.InnerException.Message );
+				}
+			};
+
+			//
+			// レジストリからプロジェクト情報を復元する
+			//
+			_project.Load( Path.Combine( _registryBaseKey, this.Title.Value ) );
+
+			//
+			// Models.Project とバインド
+			//
+			this.ProjectName = _project.ProjectName.ToReactivePropertyAsSynchronized( val => val.Value ).AddTo( _disposable );
+			this.BaseFolderPath = _project.BaseFolderPath.ToReactivePropertyAsSynchronized( val => val.Value ).AddTo( _disposable );
+			this.ProjectComment = _project.Comment.ToReactivePropertyAsSynchronized( val => val.Value ).AddTo( _disposable );
+			this.ThreeDDataFolderPath = _project.ThreeDDataFolderPath.ToReactivePropertyAsSynchronized( val => val.Value ).AddTo( _disposable );
+			this.IsCutPetTable = _project.IsCutPetTable.ToReactivePropertyAsSynchronized( val => val.Value ).AddTo( _disposable );
+			this.IsSkipAlreadyBuilt = _project.IsSkipAlreadyBuilt.ToReactivePropertyAsSynchronized( val => val.Value ).AddTo( _disposable );
+
+			//
+			// 他のプロパティから変換して使用するプロパティ
+			//
+			this.ProjectFolderPath = this.BaseFolderPath.CombineLatest( this.ProjectName, ( b, p ) =>
+				( !string.IsNullOrEmpty( b ) && !string.IsNullOrEmpty( p ) ) ? Path.Combine( b, p ) : string.Empty
+			).ToReadOnlyReactiveProperty();
+			// もしここでプロジェクトフォルダパスが有効であれば、ファイルビューのツリーを更新する
+			if ( !string.IsNullOrEmpty( this.ProjectFolderPath.Value ) ) {
+				FileTree.Clear();
+				FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
+			}
+			this.IsCameraPreviewing.Subscribe( val => {
+				if ( val ) {
 					_previewingTimer.Start();
 				} else {
 					_previewingTimer.Stop();
 					this.PreviewingImage.Value = null;
 				}
-				RaisePropertyChanged();
-			}
+			} );
+
+			//
+			// 他のウインドウを開く
+			//
+			MessageBoxRequest = new InteractionRequest<INotification>();
+			NewProjectRequest = new InteractionRequest<INotification>();
+			OpenFolderRequest = new InteractionRequest<INotification>();
+			CameraConnectionRequest = new InteractionRequest<INotification>();
+			CameraCapturingRequest = new InteractionRequest<INotification>();
+			ImageTransferingRequest = new InteractionRequest<INotification>();
+			NetworkSettingRequest = new InteractionRequest<INotification>();
+			ThreeDBuildingOneRequest = new InteractionRequest<INotification>();
+			ThreeDBuildingAllRequest = new InteractionRequest<INotification>();
+
+			//
+			// コマンド
+			//
+			NewProjectCommand = new ReactiveCommand();
+			NewProjectCommand.Subscribe( RaiseNewProjectCommand );
+			OpenFolderCommand = new ReactiveCommand();
+			OpenFolderCommand.Subscribe( RaiseOpenFolderCommand );
+			CameraConnectionCommand = new ReactiveCommand();
+			CameraConnectionCommand.Subscribe( RaiseCameraConnection );
+			CameraSettingCommand = this.IsCameraConnected.ToReactiveCommand();
+			CameraSettingCommand.Subscribe( RaiseCameraSetting );
+			CameraCapturingCommand = this.IsCameraConnected.CombineLatest( this.ProjectName, ( c, p ) => c && !string.IsNullOrEmpty( p ) ).ToReactiveCommand();
+			CameraCapturingCommand.Subscribe( RaiseCameraCapturing );
+			ImageTransferingCommand = new ReactiveCommand();
+			ImageTransferingCommand.Subscribe( RaiseImageTransfering );
+			CameraStopCommand = this.IsCameraConnected.ToReactiveCommand();
+			CameraStopCommand.Subscribe( RaiseCameraStop );
+			CameraRebootCommand = this.IsCameraConnected.ToReactiveCommand();
+			CameraRebootCommand.Subscribe( RaiseCameraReboot );
+			CameraFrontCommand = this.IsCameraConnected.ToReactiveCommand();
+			CameraFrontCommand.Subscribe( RaiseCameraFront );
+			CameraBackCommand = this.IsCameraConnected.ToReactiveCommand();
+			CameraBackCommand.Subscribe( RaiseCameraBack );
+			CameraRightCommand = this.IsCameraConnected.ToReactiveCommand();
+			CameraRightCommand.Subscribe( RaiseCameraRight );
+			CameraLeftCommand = this.IsCameraConnected.ToReactiveCommand();
+			CameraLeftCommand.Subscribe( RaiseCameraLeft );
+			NetworkSettingCommand = new ReactiveCommand();
+			NetworkSettingCommand.Subscribe( RaiseNetworkSetting );
+			ThreeDBuildingOneCommand = this.ProjectName.Select( p => !string.IsNullOrEmpty( p ) ).ToReactiveCommand();
+			ThreeDBuildingOneCommand.Subscribe( RaiseThreeDBuildingOne );
+			ThreeDBuildingAllCommand = this.ProjectName.Select( p => !string.IsNullOrEmpty( p ) ).ToReactiveCommand();
+			ThreeDBuildingAllCommand.Subscribe( RaiseThreeDBuildingAll );
+			ThreeDDataFolderOpeningCommand = new[] { this.ProjectName, this.ThreeDDataFolderPath }.CombineLatest( x => x.All( y => !string.IsNullOrEmpty( y ) ) ).ToReactiveCommand();
+			ThreeDDataFolderOpeningCommand.Subscribe( RaiseThreeDDataFolderOpening );
+			FileViewOpenFolderCommand = new ReactiveCommand();
+			FileViewOpenFolderCommand.Subscribe( RaiseFileViewOpenFolderCommand );
+			FileViewDeleteFolderCommand = new ReactiveCommand();
+			FileViewDeleteFolderCommand.Subscribe( RaiseFileViewDeleteFolderCommand );
+			CameraViewShowPictureCommand = new ReactiveCommand();
+			CameraViewShowPictureCommand.Subscribe( RaiseCameraViewShowPictureCommand );
 		}
 
-		/// <summary>情報MessageBoxを表示します。</summary>
-		public InteractionRequest<INotification> MessageBoxRequest { get; private set; }
+		~MainWindowViewModel()
+		{
+			// レジストリにプロジェクト情報を書き込む
+			_project.Save( Path.Combine( _registryBaseKey, this.Title.Value ) );
+		}
 
 		/// <summary>情報メッセージボックスを表示します。</summary>
 		/// <param name="message">メッセージボックスに表示する内容を表す文字列。</param>
@@ -78,91 +214,6 @@ namespace TestHostApp2.ViewModels
 				Title = title
 			};
 			this.MessageBoxRequest.Raise( notify );
-		}
-
-		public InteractionRequest<INotification> NewProjectRequest { get; set; }
-		public DelegateCommand NewProjectCommand { get; set; }
-		public InteractionRequest<INotification> OpenFolderRequest { get; set; }
-		public DelegateCommand OpenFolderCommand { get; set; }
-		public InteractionRequest<INotification> CameraConnectionRequest { get; set; }
-		public DelegateCommand CameraConnectionCommand { get; set; }
-		public DelegateCommand CameraSettingCommand { get; set; }
-		public InteractionRequest<INotification> CameraCapturingRequest { get; set; }
-		public DelegateCommand CameraCapturingCommand { get; set; }
-		public DelegateCommand CameraStopCommand { get; set; }
-		public DelegateCommand CameraRebootCommand { get; set; }
-		public DelegateCommand CameraFrontCommand { get; set; }
-		public DelegateCommand CameraBackCommand { get; set; }
-		public DelegateCommand CameraRightCommand { get; set; }
-		public DelegateCommand CameraLeftCommand { get; set; }
-		public InteractionRequest<INotification> NetworkSettingRequest { get; set; }
-		public DelegateCommand NetworkSettingCommand { get; set; }
-		public InteractionRequest<INotification> ThreeDBuildingOneRequest { get; set; }
-		public DelegateCommand ThreeDBuildingOneCommand { get; set; }
-		public InteractionRequest<INotification> ThreeDBuildingAllRequest { get; set; }
-		public DelegateCommand ThreeDBuildingAllCommand { get; set; }
-		public DelegateCommand FileViewOpenFolderCommand { get; set; }
-		public DelegateCommand CameraViewShowPictureCommand { get; set; }
-
-		public void Dispose()
-		{
-			this.Disposable.Dispose();
-		}
-
-		/// <summary>
-		/// コンストラクタ
-		/// </summary>
-		public MainWindowViewModel()
-		{
-			_newSyncShooter = new NewSyncShooter.NewSyncShooter();
-			_newSyncShooter.Initialize( "syncshooterDefs.json" );
-			_connectedIPAddressList = new List<string>();
-			_isCameraPreviwing = false;
-
-			this.ProjectFolderPath = this.BaseFolderPath.CombineLatest( this.ProjectName, ( b, p ) => Path.Combine( b, p ) ).ToReadOnlyReactiveProperty();
-			this.IsEnableToCapture = this.IsCameraConnected.CombineLatest( this.ProjectName, ( c, p ) => c && !string.IsNullOrEmpty( p ) ).ToReadOnlyReactiveProperty();
-			this.IsEnableToBuild3D = this.ProjectName.Select( p => !string.IsNullOrEmpty( p ) ).ToReadOnlyReactiveProperty<bool>();
-			//this.IsExpanded = new ReactiveProperty<bool>( true );
-
-			MessageBoxRequest = new InteractionRequest<INotification>();
-			NewProjectRequest = new InteractionRequest<INotification>();
-			NewProjectCommand = new DelegateCommand( RaiseNewProjectCommand );
-			OpenFolderRequest = new InteractionRequest<INotification>();
-			OpenFolderCommand = new DelegateCommand( RaiseOpenFolderCommand );
-			CameraConnectionRequest = new InteractionRequest<INotification>();
-			CameraConnectionCommand = new DelegateCommand( RaiseCameraConnection );
-			CameraSettingCommand = new DelegateCommand( RaiseCameraSetting );
-			CameraCapturingRequest = new InteractionRequest<INotification>();
-			CameraCapturingCommand = new DelegateCommand( RaiseCameraCapturing );
-			CameraStopCommand = new DelegateCommand( RaiseCameraStop );
-			CameraRebootCommand = new DelegateCommand( RaiseCameraReboot );
-			CameraFrontCommand = new DelegateCommand( RaiseCameraFront );
-			CameraBackCommand = new DelegateCommand( RaiseCameraBack );
-			CameraRightCommand = new DelegateCommand( RaiseCameraRight );
-			CameraLeftCommand = new DelegateCommand( RaiseCameraLeft );
-			NetworkSettingRequest = new InteractionRequest<INotification>();
-			NetworkSettingCommand = new DelegateCommand( RaiseNetworkSetting );
-			ThreeDBuildingOneRequest = new InteractionRequest<INotification>();
-			ThreeDBuildingOneCommand = new DelegateCommand( RaiseThreeDBuildingOne );
-			ThreeDBuildingAllRequest = new InteractionRequest<INotification>();
-			ThreeDBuildingAllCommand = new DelegateCommand( RaiseThreeDBuildingAll );
-			FileViewOpenFolderCommand = new DelegateCommand( RaiseFileViewOpenFolderCommand );
-			CameraViewShowPictureCommand = new DelegateCommand( RaiseCameraViewShowPictureCommand );
-
-			// Previewing timer を 500msecでセット
-			_previewingTimer = new DispatcherTimer( DispatcherPriority.Render );
-			_previewingTimer.Interval = TimeSpan.FromMilliseconds( 500 );
-			_previewingTimer.Tick += ( sender, args ) =>
-			{
-				try {
-					byte[] data = _newSyncShooter.GetPreviewImageFront();
-					if ( data.Length > 0 ) {
-						ShowPreviewImage( data );
-					}
-				} catch ( Exception ) {
-					//MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
-				}
-			};
 		}
 
 		/// <summary>
@@ -202,6 +253,7 @@ namespace TestHostApp2.ViewModels
 		{
 			var notification = new FolderSelectDialogConfirmation()
 			{
+				InitialDirectory = this.BaseFolderPath.Value,
 				SelectedPath = this.BaseFolderPath.Value,
 				RootFolder = Environment.SpecialFolder.Personal,
 				ShowNewFolderButton = false
@@ -226,8 +278,7 @@ namespace TestHostApp2.ViewModels
 		{
 			var notification = new CameraConnectionNotification { Title = "Camera Connection" };
 			_connectedIPAddressList.Clear();
-			_newSyncShooter.ConnectCamera().ToList().ForEach( adrs =>
-			{
+			_newSyncShooter.ConnectCamera().ToList().ForEach( adrs => {
 				_connectedIPAddressList.Add( adrs );
 				notification.ConnectedItems.Add( adrs );
 			} );
@@ -247,10 +298,9 @@ namespace TestHostApp2.ViewModels
 		/// </summary>
 		void RaiseCameraSetting()
 		{
-			IsCameraPreviwing = false;
+			IsCameraPreviewing.Value = false;
 			// TODO: 仕様を確認すること
-			_connectedIPAddressList.ToList().ForEach( adrs =>
-			{
+			_connectedIPAddressList.ToList().ForEach( adrs => {
 				var param = _newSyncShooter.GetCameraParam( adrs );
 				param.Orientation = 1;
 				_newSyncShooter.SetCameraParam( adrs, param );
@@ -267,6 +317,8 @@ namespace TestHostApp2.ViewModels
 			if ( !notification.Confirmed ) {
 				return;
 			}
+			// プレビュー中なら停止する
+			IsCameraPreviewing.Value = false;
 
 			// 撮影フォルダ名：
 			// プロジェクトのフォルダ名＋現在の年月日時分秒＋撮影番号からなるフォルダ名のフォルダに画像を保存する
@@ -275,8 +327,28 @@ namespace TestHostApp2.ViewModels
 			try {
 				Directory.CreateDirectory( sTargetDir );
 
-				IsCameraPreviwing = false;
+				//// 正面カメラの画像を取得する
+				//byte[] imaegData = _newSyncShooter.GetPreviewImageFront();
+				//if ( imaegData.Length == 0 ) {
+				//	// TODO: 「正面カメラの画像を取得できませんでした」
+				//	return;
+				//}
+				//var ms = new MemoryStream( imaegData );
+				//BitmapSource bitmapSource = BitmapFrame.Create( ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad );
+
+				// カメラ画像転送ダイアログを開く
+				var notification2 = new ImagTransferingNotification()
+				{
+					Title = "カメラ画像転送",
+					SyncShooter = _newSyncShooter,
+					ConnectedIPAddressList = _connectedIPAddressList,
+					TargetDir = sTargetDir,
+					//Image = bitmapSource,
+				};
 				var t = DateTime.Now;
+				//ImageTransferingRequest.Raise( notification2 );
+				//if ( notification.Confirmed ) {
+
 				_connectedIPAddressList.AsParallel().ForAll( adrs =>
 				{
 					// 画像を撮影＆取得
@@ -290,47 +362,67 @@ namespace TestHostApp2.ViewModels
 					}
 				} );
 
+				//// TODO: カメラ画像転送ダイアログを閉じる
+				//var notification3 = new ClosingNotificaton();
+				//ImageTransferingRequest.Raise( notification3 );
+
 				// 「ファイルビュー」表示を更新
 				FileTree.Clear();
 				FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
-				//IsExpanded.Value = true;
 
 				TimeSpan ts = DateTime.Now - t;
 				SowInformationMessage( sTargetDir + "\n\nElapsed: " + ts.ToString( "s\\.fff" ) + " sec" );
+				//}
 
 			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
 			}
 		}
 
+		/// <summary>
+		/// 画像ファイル転送
+		/// </summary>
+		void RaiseImageTransfering()
+		{
+			var notification = new Confirmation();
+			ImageTransferingRequest.Raise( notification );
+
+		}
+
+		/// <summary>
+		/// カメラ停止
+		/// </summary>
 		void RaiseCameraStop()
 		{
-			IsCameraPreviwing = false;
+			IsCameraPreviewing.Value = false;
 			_newSyncShooter.StopCamera( false );
 			_connectedIPAddressList.Clear();
 			this.IsCameraConnected.Value = ( _connectedIPAddressList.Count > 0 );
+			CameraTree.Clear();
+			CameraTree.Add( new CameraTreeItem( _connectedIPAddressList ) );
 		}
 
+		/// <summary>
+		/// カメラ再起動
+		/// </summary>
 		void RaiseCameraReboot()
 		{
-			IsCameraPreviwing = false;
+			IsCameraPreviewing.Value = false;
 			_newSyncShooter.StopCamera( true );
 			_connectedIPAddressList.Clear();
 			this.IsCameraConnected.Value = ( _connectedIPAddressList.Count > 0 );
+			CameraTree.Clear();
+			CameraTree.Add( new CameraTreeItem( _connectedIPAddressList ) );
 		}
 
 		void RaiseCameraFront()
 		{
-			IsCameraPreviwing = false;
+			IsCameraPreviewing.Value = false;
 			try {
 				byte[] data = _newSyncShooter.GetPreviewImageFront();
 				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					//String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_front.bmp" ) );
-					//using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-					//	fs.Write( data, 0, (int) data.Length );
-					//}
 				}
 			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
@@ -339,16 +431,12 @@ namespace TestHostApp2.ViewModels
 
 		void RaiseCameraBack()
 		{
-			IsCameraPreviwing = false;
+			IsCameraPreviewing.Value = false;
 			try {
 				byte[] data = _newSyncShooter.GetPreviewImageBack();
 				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					//String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_back.bmp" ) );
-					//using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-					//	fs.Write( data, 0, (int) data.Length );
-					//}
 				}
 			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
@@ -357,16 +445,12 @@ namespace TestHostApp2.ViewModels
 
 		void RaiseCameraRight()
 		{
-			IsCameraPreviwing = false;
+			IsCameraPreviewing.Value = false;
 			try {
 				byte[] data = _newSyncShooter.GetPreviewImageRight();
 				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					//String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_right.bmp" ) );
-					//using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-					//	fs.Write( data, 0, (int) data.Length );
-					//}
 				}
 			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
@@ -375,16 +459,12 @@ namespace TestHostApp2.ViewModels
 
 		void RaiseCameraLeft()
 		{
-			IsCameraPreviwing = false;
+			IsCameraPreviewing.Value = false;
 			try {
 				byte[] data = _newSyncShooter.GetPreviewImageLeft();
 				if ( data.Length > 0 ) {
 					// bitmap を表示
 					ShowPreviewImage( data );
-					//String path = Path.Combine( _project.ProjectFolderPath, string.Format( @".\preview_left.bmp" ) );
-					//using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-					//	fs.Write( data, 0, (int) data.Length );
-					//}
 				}
 			} catch ( Exception e ) {
 				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
@@ -421,18 +501,17 @@ namespace TestHostApp2.ViewModels
 			var notification = new ThreeDBuildingNotification
 			{
 				Title = "3Dモデル作成",
-				IsEnableSkipAlreadyBuilt = false,
 				ImageFolderPath = this.ProjectFolderPath.Value,	// TODO: プロジェクトフォルダの下の、TreeView上で選択中の画像フォルダ
-				Output3DFolderPath = this.ThreeDDataFolderPath.Value,
+				ThreeDDataFolderPath = this.ThreeDDataFolderPath.Value,
 				IsCutPetTable = this.IsCutPetTable.Value,
-				//IsSkipAlreadyBuilt = this.IsSkipAlreadyBuilt.Value,
+				IsEnableSkipAlreadyBuilt = false,
 			};
 			ThreeDBuildingOneRequest.Raise( notification );
-			if ( !notification.Confirmed ) {
-				this.ThreeDDataFolderPath.Value = notification.Output3DFolderPath;
+			if ( notification.Confirmed ) {
+				this.ThreeDDataFolderPath.Value = notification.ThreeDDataFolderPath;
 				this.IsCutPetTable.Value = notification.IsCutPetTable;
 
-				ProcessStartInfo startInfo = new ProcessStartInfo();
+				var startInfo = new ProcessStartInfo();
 				// バッチファイルを起動する人は、cmd.exeさんなので
 				startInfo.FileName = "cmd.exe";
 				// コマンド処理実行後、コマンドウィンドウ終わるようにする。
@@ -458,18 +537,41 @@ namespace TestHostApp2.ViewModels
 			var notification = new ThreeDBuildingNotification
 			{
 				Title = "3Dモデル作成",
-				IsEnableSkipAlreadyBuilt = true,
 				ImageFolderPath = this.ProjectFolderPath.Value,
-				Output3DFolderPath = this.ThreeDDataFolderPath.Value,
+				ThreeDDataFolderPath = this.ThreeDDataFolderPath.Value,
 				IsCutPetTable = this.IsCutPetTable.Value,
 				IsSkipAlreadyBuilt = this.IsSkipAlreadyBuilt.Value,
+				IsEnableSkipAlreadyBuilt = true,
 			};
-			ThreeDBuildingOneRequest.Raise( notification );
-			if ( !notification.Confirmed ) {
-				this.ThreeDDataFolderPath.Value = notification.Output3DFolderPath;
+			ThreeDBuildingAllRequest.Raise( notification );
+			if ( notification.Confirmed ) {
+				this.ThreeDDataFolderPath.Value = notification.ThreeDDataFolderPath;
 				this.IsCutPetTable.Value = notification.IsCutPetTable;
 				this.IsSkipAlreadyBuilt.Value = notification.IsSkipAlreadyBuilt;
+
+				var startInfo = new ProcessStartInfo();
+				startInfo.FileName = "cmd.exe";
+				startInfo.Arguments = "/c ";
+				startInfo.Arguments += @"..\..\UserRibbonButtons\button2.bat ";
+				var srgString = this.ProjectFolderPath.Value + " " + this.ThreeDDataFolderPath.Value;
+				startInfo.Arguments += srgString;
+				var proc = Process.Start(startInfo);
+				proc.WaitForExit();
 			}
+		}
+
+		/// <summary>
+		/// 3D - データフォルダを開く
+		/// </summary>
+		void RaiseThreeDDataFolderOpening()
+		{
+			var startInfo = new ProcessStartInfo
+			{
+				FileName = "explorer.exe",
+				Arguments = this.ThreeDDataFolderPath.Value,
+			};
+			var proc = Process.Start( startInfo );
+			proc.WaitForExit();
 		}
 
 		/// <summary>
@@ -480,12 +582,36 @@ namespace TestHostApp2.ViewModels
 			var items = this.FileTree.First().Items.SourceCollection;
 			foreach ( var item in items ) {
 				var treeItem = item as FileTreeItem;
-				if (treeItem.IsSelected) {
-					ProcessStartInfo startInfo = new ProcessStartInfo();
-					startInfo.FileName = "explorer.exe";
-					startInfo.Arguments = treeItem._Directory.FullName;
+				if ( treeItem.IsSelected ) {
+					var startInfo = new ProcessStartInfo
+					{
+						FileName = "explorer.exe",
+						Arguments = treeItem._Directory.FullName,
+					};
 					var proc = Process.Start( startInfo );
 					//proc.WaitForExit();
+				}
+			}
+		}
+
+		/// <summary>
+		/// ファイルビューのコンテキストメニュー　[フォルダを削除]
+		/// </summary>
+		void RaiseFileViewDeleteFolderCommand()
+		{
+			var items = this.FileTree.First().Items.SourceCollection;
+			foreach ( var item in items ) {
+				var treeItem = item as FileTreeItem;
+				if ( treeItem.IsSelected ) {
+					var path = treeItem._Directory.FullName;
+					Microsoft.VisualBasic.FileIO.FileSystem.DeleteDirectory( path,
+						Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
+						Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin,
+						Microsoft.VisualBasic.FileIO.UICancelOption.DoNothing );
+
+					FileTree.Clear();
+					FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
+
 				}
 			}
 		}
@@ -496,10 +622,10 @@ namespace TestHostApp2.ViewModels
 		void RaiseCameraViewShowPictureCommand()
 		{
 			var items = this.CameraTree.First().Items.SourceCollection;
-			foreach (var item in items) {
-				var treeItem = item as CameraTreeItem;
-				if (treeItem.IsSelected) {
-					IsCameraPreviwing = false;
+			foreach ( var item in items ) {
+				var treeItem = item as CameraSubTreeItem;
+				if ( treeItem.IsSelected ) {
+					IsCameraPreviewing.Value = false;
 					try {
 						string sIPAddress = treeItem._ipAddress;
 						byte[] data = _newSyncShooter.GetPreviewImage(sIPAddress);

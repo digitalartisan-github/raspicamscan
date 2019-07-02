@@ -38,6 +38,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Controls.Ribbon" />
@@ -61,18 +62,24 @@
     </ApplicationDefinition>
     <Compile Include="Models\Project.cs" />
     <Compile Include="Notifications\CameraCapturingNotification.cs" />
+    <Compile Include="Notifications\ClosingNotificaton.cs" />
+    <Compile Include="Notifications\ImagTransferingNotification.cs" />
     <Compile Include="Notifications\NetworkSettingNotification.cs" />
     <Compile Include="Notifications\NewProjectNotification.cs" />
     <Compile Include="Notifications\ThreeDBuildingNotification.cs" />
     <Compile Include="ViewModels\CameraCapturingViewModel.cs" />
     <Compile Include="ViewModels\CameraTreeItem.cs" />
     <Compile Include="ViewModels\FileTreeItem.cs" />
+    <Compile Include="ViewModels\ImageTransferingViewModel.cs" />
     <Compile Include="ViewModels\NetworkSettingViewModel.cs" />
     <Compile Include="ViewModels\NewProjectViewModel.cs" />
     <Compile Include="ViewModels\ThreeDBuildingViewModel.cs" />
     <Compile Include="ViewModels\TreeViewItemViewModel.cs" />
     <Compile Include="Views\CameraCapturingView.xaml.cs">
       <DependentUpon>CameraCapturingView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ImageTransferingView.xaml.cs">
+      <DependentUpon>ImageTransferingView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\NavigationTree.xaml.cs">
       <DependentUpon>NavigationTree.xaml</DependentUpon>
@@ -92,6 +99,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\CameraCapturingView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ImageTransferingView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -14,7 +14,7 @@ namespace TestHostApp2.ViewModels
 		private IConfirmation _notification;
 
 		public ReactiveProperty<string> ImageFolderPath { get; set; } = new ReactiveProperty<string>( string.Empty );
-		public ReactiveProperty<string> Output3DFolderPath { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> ThreeDDataFolderPath { get; set; } = new ReactiveProperty<string>( string.Empty );
 		public ReactiveProperty<bool> IsCutPetTable { get; set; } = new ReactiveProperty<bool>( false );
 		public ReactiveProperty<bool> IsSkipAlreadyBuilt { get; set; } = new ReactiveProperty<bool>( false );
 		public ReactiveProperty<bool> IsEnableSkipAlreadyBuilt { get; set; } = new ReactiveProperty<bool>( false );
@@ -37,20 +37,20 @@ namespace TestHostApp2.ViewModels
 			ThreeDBuildingNotification notification = _notification as ThreeDBuildingNotification;
 			var folderNotification = new FolderSelectDialogConfirmation()
 			{
-				SelectedPath = notification.Output3DFolderPath,
+				SelectedPath = notification.ThreeDDataFolderPath,
 				RootFolder = Environment.SpecialFolder.Personal,
 				ShowNewFolderButton = false
 			};
 			BrowseFolderRequest.Raise( folderNotification );
 			if ( folderNotification.Confirmed ) {
-				notification.Output3DFolderPath = folderNotification.SelectedPath;;
+				notification.ThreeDDataFolderPath = folderNotification.SelectedPath;;
 			}
 		}
 
 		private void OKInteraction()
 		{
 			ThreeDBuildingNotification notification = _notification as ThreeDBuildingNotification;
-			notification.Output3DFolderPath = Output3DFolderPath.Value;
+			notification.ThreeDDataFolderPath = ThreeDDataFolderPath.Value;
 			notification.IsCutPetTable = IsCutPetTable.Value;
 			notification.IsSkipAlreadyBuilt = IsSkipAlreadyBuilt.Value;
 
@@ -70,9 +70,9 @@ namespace TestHostApp2.ViewModels
 			set
 			{
 				SetProperty( ref _notification, (IConfirmation) value );
-				ThreeDBuildingNotification notification = _notification as ThreeDBuildingNotification;
+				var notification = _notification as ThreeDBuildingNotification;
 				ImageFolderPath.Value = notification.ImageFolderPath;
-				Output3DFolderPath.Value = notification.Output3DFolderPath;
+				ThreeDDataFolderPath.Value = notification.ThreeDDataFolderPath;
 				IsCutPetTable.Value = notification.IsCutPetTable;
 				IsSkipAlreadyBuilt.Value = notification.IsSkipAlreadyBuilt;
 				IsEnableSkipAlreadyBuilt.Value = notification.IsEnableSkipAlreadyBuilt;

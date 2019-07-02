@@ -13,7 +13,6 @@ namespace TestHostApp2.ViewModels
 	public class CameraTreeItem : TreeViewItem
 	{
 		List<string> _IPAddressList;
-		public string _ipAddress;
 
 		public CameraTreeItem( List<string> IPAddressList )
 		{
@@ -23,16 +22,10 @@ namespace TestHostApp2.ViewModels
 			if ( IPAddressList.Count > 0 ) {
 				this.Items.Clear();
 				foreach ( var adrs in _IPAddressList ) {
-					this.Items.Add( new CameraTreeItem( adrs ) );
+					this.Items.Add( new CameraSubTreeItem( adrs ) );
 				}
 				this.IsExpanded = true;
 			}
-		}
-
-		public CameraTreeItem( string adrs )
-		{
-			_ipAddress = adrs;
-			this.Header = CreateCameraHeader( adrs );
 		}
 
 		private StackPanel CreateRootHeader()
@@ -47,6 +40,17 @@ namespace TestHostApp2.ViewModels
 			} );
 			sp.Children.Add( new TextBlock() { Text = string.Format( "Connected Camera ({0})", _IPAddressList.Count ) } );
 			return sp;
+		}
+	}
+
+	public class CameraSubTreeItem : TreeViewItem
+	{
+		public string _ipAddress;
+
+		public CameraSubTreeItem( string adrs )
+		{
+			_ipAddress = adrs;
+			this.Header = CreateCameraHeader( adrs );
 		}
 
 		private StackPanel CreateCameraHeader( string adrs )

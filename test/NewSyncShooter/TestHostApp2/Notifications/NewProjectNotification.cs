@@ -1,5 +1,4 @@
 ﻿using Prism.Interactivity.InteractionRequest;
-using TestHostApp2.Models;
 
 namespace TestHostApp2.Notifications
 {

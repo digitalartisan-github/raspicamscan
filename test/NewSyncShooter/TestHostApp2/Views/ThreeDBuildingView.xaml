@@ -30,23 +30,16 @@
 			<ColumnDefinition Width="80"/>
 			<ColumnDefinition/>
 		</Grid.ColumnDefinitions>
-		<Label Grid.Row="0" Grid.Column="0" Content="作成ショット :"/>
-		<TextBox Grid.Row="0" Grid.Column="1" Width="250" Height="24" HorizontalAlignment="Left" Margin="4" IsEnabled="False" Text="{Binding ImageFolderPath.Value}"/>
-		<Label Grid.Row="1" Grid.Column="0" Content="出力先 :"/>
-		<StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
-			<TextBox Width="250" Height="24" HorizontalAlignment="Left" Margin="4" Text="{Binding Output3DFolderPath.Value}"/>
+		<Label Grid.Row="0" Grid.Column="0" Content="作成ショット :" Margin="4"/>
+		<TextBox Grid.Row="0" Grid.Column="1" Width="250" Height="24" HorizontalAlignment="Left" Margin="8" IsEnabled="False" Text="{Binding ImageFolderPath.Value}"/>
+		<Label Grid.Row="1" Grid.Column="0" Content="出力先 :" Margin="4"/>
+		<StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="4">
+			<TextBox Width="250" Height="24" HorizontalAlignment="Left" Margin="4" Text="{Binding ThreeDDataFolderPath.Value}"/>
 			<Button Content="参照" Height="24" Width="48" Margin="4" Command="{Binding BrowseFolderCommand}"/>
 		</StackPanel>
-		<CheckBox Grid.Row="2" Grid.Column="1" VerticalContentAlignment="Center" Content="ペット台の自動カット">
-			<CheckBox.Visibility>
-				<Binding Path="IsCutPetTable.Value">
-					<Binding.Converter>
-						<BooleanToVisibilityConverter/>
-					</Binding.Converter>
-				</Binding>
-			</CheckBox.Visibility>
+		<CheckBox Grid.Row="2" Grid.Column="1" VerticalContentAlignment="Center" Content="ペット台の自動カット" Margin="4" IsChecked="{Binding IsCutPetTable.Value}">
 		</CheckBox>
-		<CheckBox Grid.Row="3" Grid.Column="1" VerticalContentAlignment="Center" Content="作成済みのモデルはスキップ">
+		<CheckBox Grid.Row="3" Grid.Column="1" VerticalContentAlignment="Center" Content="作成済みのモデルはスキップ" Margin="4" IsChecked="{Binding IsEnableSkipAlreadyBuilt.Value}">
 			<CheckBox.Visibility>
 				<Binding Path="IsEnableSkipAlreadyBuilt.Value">
 					<Binding.Converter>
@@ -55,7 +48,7 @@
 				</Binding>
 			</CheckBox.Visibility>
 		</CheckBox>
-		<StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+		<StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="4">
 			<Button Content="OK" Width="60" Height="24" Margin="4" IsDefault="True" Command="{Binding OkCommand}"/>
 			<Button Content="キャンセル" Width="60" Height="24" Margin="4" Command="{Binding CancelCommand}"/>
 		</StackPanel>
