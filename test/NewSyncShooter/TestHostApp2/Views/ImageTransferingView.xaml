@@ -1,21 +1,27 @@
 ﻿<UserControl x:Class="TestHostApp2.Views.ImageTransferingView"
 						xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
 						xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+							xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
 						xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
 						xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-						xmlns:prism="http://prismlibrary.com/"             
+						xmlns:prism="http://prismlibrary.com/"
 						prism:ViewModelLocator.AutoWireViewModel="True"
 						xmlns:local="clr-namespace:TestHostApp2.Views"
 						mc:Ignorable="d" 
 						d:DesignHeight="800" d:DesignWidth="600">
+	<i:Interaction.Triggers>
+		<prism:InteractionRequestTrigger SourceObject="{Binding CloseWindowRequest, Mode=OneWay}">
+			<local:CloseWindowAction/>
+		</prism:InteractionRequestTrigger>
+	</i:Interaction.Triggers>
+	
 	<StackPanel>
 		<StackPanel Orientation="Horizontal" Margin="8">
 			<Label Content="画像ファイル転送中..." Margin="4"/>
 			<Label Content="{Binding ProgressText.Value}" MinWidth="100" Margin="4"/>
 			<Button Content="中止" Width="80" Margin="4" Command="{Binding CancelCommand}"/>
 		</StackPanel>
-		<ProgressBar Width="auto" Height="24" Margin="8"/>
-		<Image Name="PreviewImage" Source="{Binding PreviewingImage.Value}" Width="auto" Height="auto"/>
-
+		<ProgressBar Width="auto" Height="24" Margin="8" Maximum="{Binding ProgressMaxValue.Value}" Value="{Binding ProgressValue.Value}"/>
+		<Image Name="PreviewImage" Source="{Binding PreviewingImage.Value}" Width="600"/>
 	</StackPanel>
 </UserControl>

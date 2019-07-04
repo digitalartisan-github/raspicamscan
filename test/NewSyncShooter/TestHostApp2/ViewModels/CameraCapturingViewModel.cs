@@ -3,6 +3,8 @@ using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Interactivity.InteractionRequest;
 using Reactive.Bindings;
+using System.Reactive.Linq;
+using System.Reactive.Disposables;
 using TestHostApp2.Notifications;
 
 namespace TestHostApp2.ViewModels
@@ -12,15 +14,17 @@ namespace TestHostApp2.ViewModels
 		public Action FinishInteraction { get; set; }
 		private IConfirmation _notification;
 
-		public ReactiveProperty<string> CapturingName { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> CapturingName { get; } = new ReactiveProperty<string>( string.Empty );
 
-		public DelegateCommand OkCommand { get; private set; }
-		public DelegateCommand CancelCommand { get; private set; }
+		public ReactiveCommand OkCommand { get; }
+		public ReactiveCommand CancelCommand { get; }
 
 		public CameraCapturingViewModel()
 		{
-			OkCommand = new DelegateCommand( OKInteraction );
-			CancelCommand = new DelegateCommand( CancelInteraction );
+			OkCommand = CapturingName.Select( s => !string.IsNullOrEmpty( s ) ).ToReactiveCommand();
+			OkCommand.Subscribe( OKInteraction );
+			CancelCommand = new ReactiveCommand();
+			CancelCommand.Subscribe( CancelInteraction );
 		}
 
 		private void OKInteraction()

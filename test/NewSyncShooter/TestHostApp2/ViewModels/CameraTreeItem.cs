@@ -12,14 +12,14 @@ namespace TestHostApp2.ViewModels
 {
 	public class CameraTreeItem : TreeViewItem
 	{
-		List<string> _IPAddressList;
+		IEnumerable<string> _IPAddressList;
 
-		public CameraTreeItem( List<string> IPAddressList )
+		public CameraTreeItem( IEnumerable<string> IPAddressList )
 		{
 			_IPAddressList = IPAddressList;
 
 			this.Header = CreateRootHeader();
-			if ( IPAddressList.Count > 0 ) {
+			if ( IPAddressList.Count() > 0 ) {
 				this.Items.Clear();
 				foreach ( var adrs in _IPAddressList ) {
 					this.Items.Add( new CameraSubTreeItem( adrs ) );
@@ -38,7 +38,7 @@ namespace TestHostApp2.ViewModels
 				Height = 18,
 				Margin = new Thickness( 0, 0, 4, 0 )
 			} );
-			sp.Children.Add( new TextBlock() { Text = string.Format( "Connected Camera ({0})", _IPAddressList.Count ) } );
+			sp.Children.Add( new TextBlock() { Text = string.Format( "Connected Camera ({0})", _IPAddressList.Count() ) } );
 			return sp;
 		}
 	}

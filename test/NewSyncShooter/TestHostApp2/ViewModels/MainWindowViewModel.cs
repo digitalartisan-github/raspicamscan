@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -8,8 +7,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Net.NetworkInformation;
 using System.Diagnostics;
-using Prism.Mvvm;
 using Prism.Commands;
+using Prism.Mvvm;
 using Prism.Interactivity.InteractionRequest;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
@@ -27,43 +26,45 @@ namespace TestHostApp2.ViewModels
 		private readonly string _registryBaseKey = @"Software\DiGITAL ARTISAN";
 		private readonly Models.Project _project = new Models.Project();
 		private NewSyncShooter.NewSyncShooter _newSyncShooter;
-		private List<string> _connectedIPAddressList;
 		private DispatcherTimer _previewingTimer;
 
 		#region Properties
-		public ReactiveProperty<string> Title { get; private set; } = new ReactiveProperty<string>( "NewSyncShooter" );
-		public ReactiveProperty<string> ProjectName;
-		public ReactiveProperty<string> BaseFolderPath;
-		public ReactiveProperty<string> ProjectComment;
-		public ReactiveProperty<string> ThreeDDataFolderPath;
-		public ReactiveProperty<bool> IsCutPetTable;
-		public ReactiveProperty<bool> IsSkipAlreadyBuilt;
+		private readonly ObservableCollection<string> ConnectedIPAddressList;
+		public ReactiveProperty<string> Title { get; } = new ReactiveProperty<string>( "NewSyncShooter" );
+		public ReactiveProperty<string> ProjectName { get; }
+		public ReactiveProperty<string> BaseFolderPath { get; }
+		public ReactiveProperty<string> ProjectComment { get; }
+		public ReactiveProperty<string> ThreeDDataFolderPath { get; }
+		public ReactiveProperty<bool> IsCutPetTable { get; }
+		public ReactiveProperty<bool> IsSkipAlreadyBuilt { get; }
 		public ReadOnlyReactiveProperty<string> ProjectFolderPath { get; }
-		public ReactiveProperty<bool> IsCameraConnected { get; private set; } = new ReactiveProperty<bool>( false );
-		public ReactiveProperty<bool> IsCameraPreviewing { get; set; } = new ReactiveProperty<bool>();
-		public ReactiveProperty<BitmapSource> PreviewingImage { get; private set; } = new ReactiveProperty<BitmapSource>();
+		public ReadOnlyReactiveProperty<bool> IsCameraConnected { get; }
+		public ReactiveProperty<bool> IsCameraPreviewing { get; } = new ReactiveProperty<bool>();
+		public ReactiveProperty<BitmapSource> PreviewingImage { get; } = new ReactiveProperty<BitmapSource>();
 		public ObservableCollection<FileTreeItem> FileTree { get; } = new ObservableCollection<FileTreeItem>();
 		public ObservableCollection<CameraTreeItem> CameraTree { get; } = new ObservableCollection<CameraTreeItem>();
 		#endregion
 
-		#region Window Request
-		public InteractionRequest<INotification> MessageBoxRequest { get; private set; }
-		public InteractionRequest<INotification> NewProjectRequest { get; set; }
-		public InteractionRequest<INotification> OpenFolderRequest { get; set; }
-		public InteractionRequest<INotification> CameraConnectionRequest { get; set; }
-		public InteractionRequest<INotification> CameraCapturingRequest { get; set; }
-		public InteractionRequest<INotification> ImageTransferingRequest { get; set; }
-		public InteractionRequest<INotification> NetworkSettingRequest { get; set; }
-		public InteractionRequest<INotification> ThreeDBuildingOneRequest { get; set; }
-		public InteractionRequest<INotification> ThreeDBuildingAllRequest { get; set; }
+		#region Window Requests
+		public InteractionRequest<INotification> OpenMessageBoxRequest { get; } = new InteractionRequest<INotification>();
+		public InteractionRequest<INotification> NewProjectRequest { get; } = new InteractionRequest<INotification>();
+		public InteractionRequest<INotification> OpenFolderRequest { get; } = new InteractionRequest<INotification>();
+		public InteractionRequest<INotification> CameraConnectionRequest { get; } = new InteractionRequest<INotification>();
+		public InteractionRequest<INotification> CameraCapturingRequest { get; } = new InteractionRequest<INotification>();
+		public InteractionRequest<INotification> ImageTransferingRequest { get; } = new InteractionRequest<INotification>();
+		//public InteractionRequest<INotification> ImageTransferingClosingRequest { get; } = new InteractionRequest<INotification>();
+		public InteractionRequest<INotification> NetworkSettingRequest { get; } = new InteractionRequest<INotification>();
+		public InteractionRequest<INotification> ThreeDBuildingOneRequest { get; } = new InteractionRequest<INotification>();
+		public InteractionRequest<INotification> ThreeDBuildingAllRequest { get; } = new InteractionRequest<INotification>();
 		#endregion
 
+		#region Commands
 		public ReactiveCommand NewProjectCommand { get; }
 		public ReactiveCommand OpenFolderCommand { get; }
 		public ReactiveCommand CameraConnectionCommand { get; }
 		public ReactiveCommand CameraSettingCommand { get; }
 		public ReactiveCommand CameraCapturingCommand { get; }
-		public ReactiveCommand ImageTransferingCommand { get; }
+		//public ReactiveCommand ImageTransferingCommand { get; }
 		public ReactiveCommand CameraStopCommand { get; }
 		public ReactiveCommand CameraRebootCommand { get; }
 		public ReactiveCommand CameraFrontCommand { get; }
@@ -77,6 +78,7 @@ namespace TestHostApp2.ViewModels
 		public ReactiveCommand FileViewOpenFolderCommand { get; }
 		public ReactiveCommand FileViewDeleteFolderCommand { get; }
 		public ReactiveCommand CameraViewShowPictureCommand { get; }
+		#endregion
 
 		public void Dispose()
 		{
@@ -88,9 +90,11 @@ namespace TestHostApp2.ViewModels
 		/// </summary>
 		public MainWindowViewModel()
 		{
+			// レジストリからプロジェクト情報を復元する
+			_project.Load( Path.Combine( _registryBaseKey, this.Title.Value ) );
+
 			_newSyncShooter = new NewSyncShooter.NewSyncShooter();
 			_newSyncShooter.Initialize( "syncshooterDefs.json" );
-			_connectedIPAddressList = new List<string>();
 
 			// Previewing timer を 500msecでセット
 			_previewingTimer = new DispatcherTimer( DispatcherPriority.Render );
@@ -106,14 +110,13 @@ namespace TestHostApp2.ViewModels
 				}
 			};
 
-			//
-			// レジストリからプロジェクト情報を復元する
-			//
-			_project.Load( Path.Combine( _registryBaseKey, this.Title.Value ) );
+			this.ConnectedIPAddressList = new ReactiveCollection<string>();
+			this.ConnectedIPAddressList.PropertyChangedAsObservable().Subscribe( item => {
+				CameraTree.Clear();
+				CameraTree.Add( new CameraTreeItem( ConnectedIPAddressList ) );
+			} );
 
-			//
-			// Models.Project とバインド
-			//
+			// Models.Project のプロパティと双方向で同期する
 			this.ProjectName = _project.ProjectName.ToReactivePropertyAsSynchronized( val => val.Value ).AddTo( _disposable );
 			this.BaseFolderPath = _project.BaseFolderPath.ToReactivePropertyAsSynchronized( val => val.Value ).AddTo( _disposable );
 			this.ProjectComment = _project.Comment.ToReactivePropertyAsSynchronized( val => val.Value ).AddTo( _disposable );
@@ -121,17 +124,26 @@ namespace TestHostApp2.ViewModels
 			this.IsCutPetTable = _project.IsCutPetTable.ToReactivePropertyAsSynchronized( val => val.Value ).AddTo( _disposable );
 			this.IsSkipAlreadyBuilt = _project.IsSkipAlreadyBuilt.ToReactivePropertyAsSynchronized( val => val.Value ).AddTo( _disposable );
 
-			//
-			// 他のプロパティから変換して使用するプロパティ
-			//
+			// プロジェクトのフォルダパス名は、ベースフォルダ名とプロジェクト名と同期する
 			this.ProjectFolderPath = this.BaseFolderPath.CombineLatest( this.ProjectName, ( b, p ) =>
-				( !string.IsNullOrEmpty( b ) && !string.IsNullOrEmpty( p ) ) ? Path.Combine( b, p ) : string.Empty
-			).ToReadOnlyReactiveProperty();
-			// もしここでプロジェクトフォルダパスが有効であれば、ファイルビューのツリーを更新する
+				( !string.IsNullOrEmpty( b ) && !string.IsNullOrEmpty( p ) ) ? Path.Combine( b, p ) : string.Empty ).ToReadOnlyReactiveProperty();
+			// ここでプロジェクトフォルダパスが有効であれば、ファイルビューのツリーを更新する
 			if ( !string.IsNullOrEmpty( this.ProjectFolderPath.Value ) ) {
 				FileTree.Clear();
 				FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
 			}
+
+			// カメラの接続状態を示すプロパティは、接続しているIPアドレスのリストと同期する
+			this.IsCameraConnected = this.ConnectedIPAddressList.CollectionChangedAsObservable().Select( e => {
+				switch ( e.Action ) {
+				case System.Collections.Specialized.NotifyCollectionChangedAction.Reset:
+				default:
+					return false;
+				case System.Collections.Specialized.NotifyCollectionChangedAction.Add:
+					return e.NewItems.Count > 0;
+				}
+			} ).ToReadOnlyReactiveProperty();
+
 			this.IsCameraPreviewing.Subscribe( val => {
 				if ( val ) {
 					_previewingTimer.Start();
@@ -141,22 +153,7 @@ namespace TestHostApp2.ViewModels
 				}
 			} );
 
-			//
-			// 他のウインドウを開く
-			//
-			MessageBoxRequest = new InteractionRequest<INotification>();
-			NewProjectRequest = new InteractionRequest<INotification>();
-			OpenFolderRequest = new InteractionRequest<INotification>();
-			CameraConnectionRequest = new InteractionRequest<INotification>();
-			CameraCapturingRequest = new InteractionRequest<INotification>();
-			ImageTransferingRequest = new InteractionRequest<INotification>();
-			NetworkSettingRequest = new InteractionRequest<INotification>();
-			ThreeDBuildingOneRequest = new InteractionRequest<INotification>();
-			ThreeDBuildingAllRequest = new InteractionRequest<INotification>();
-
-			//
-			// コマンド
-			//
+			// Commands
 			NewProjectCommand = new ReactiveCommand();
 			NewProjectCommand.Subscribe( RaiseNewProjectCommand );
 			OpenFolderCommand = new ReactiveCommand();
@@ -167,8 +164,8 @@ namespace TestHostApp2.ViewModels
 			CameraSettingCommand.Subscribe( RaiseCameraSetting );
 			CameraCapturingCommand = this.IsCameraConnected.CombineLatest( this.ProjectName, ( c, p ) => c && !string.IsNullOrEmpty( p ) ).ToReactiveCommand();
 			CameraCapturingCommand.Subscribe( RaiseCameraCapturing );
-			ImageTransferingCommand = new ReactiveCommand();
-			ImageTransferingCommand.Subscribe( RaiseImageTransfering );
+			//ImageTransferingCommand = new ReactiveCommand();
+			//ImageTransferingCommand.Subscribe( RaiseImageTransfering );
 			CameraStopCommand = this.IsCameraConnected.ToReactiveCommand();
 			CameraStopCommand.Subscribe( RaiseCameraStop );
 			CameraRebootCommand = this.IsCameraConnected.ToReactiveCommand();
@@ -203,17 +200,28 @@ namespace TestHostApp2.ViewModels
 			_project.Save( Path.Combine( _registryBaseKey, this.Title.Value ) );
 		}
 
-		/// <summary>情報メッセージボックスを表示します。</summary>
-		/// <param name="message">メッセージボックスに表示する内容を表す文字列。</param>
-		/// <param name="title">メッセージボックスのタイトルを表す文字列。</param>
-		private void SowInformationMessage( string message, string title = "Information" )
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="title"></param>
+		/// <param name="icon"></param>
+		/// <param name="button"></param>
+		/// <param name="defaultButton"></param>
+		/// <param name="message"></param>
+		/// <returns></returns>
+		private MessageBoxResult OpenMessageBox( string title, MessageBoxImage icon, MessageBoxButton button, MessageBoxResult defaultButton, string message )
 		{
-			var notify = new Notification()
+			var notification = new MessageBoxNotification()
 			{
-				Content = message,
-				Title = title
+				Title = title,
+				Message = message,
+				Button = button,
+				Image = icon,
+				DefaultButton = defaultButton
 			};
-			this.MessageBoxRequest.Raise( notify );
+			OpenMessageBoxRequest.Raise( notification );
+
+			return notification.Result;
 		}
 
 		/// <summary>
@@ -231,7 +239,8 @@ namespace TestHostApp2.ViewModels
 				this.BaseFolderPath.Value = notification.BaseFolderPath;
 				this.ProjectComment.Value = notification.ProjectComment;
 				if ( Directory.Exists( this.ProjectFolderPath.Value ) ) {
-					SowInformationMessage( this.ProjectFolderPath.Value + "は既に存在しています。新しい名前を指定してください。" );
+					OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK,
+						this.ProjectFolderPath.Value + "は既に存在しています。新しい名前を指定してください。" );
 				} else {
 					Directory.CreateDirectory( this.ProjectFolderPath.Value );
 					// コメントを出力
@@ -277,20 +286,18 @@ namespace TestHostApp2.ViewModels
 		void RaiseCameraConnection()
 		{
 			var notification = new CameraConnectionNotification { Title = "Camera Connection" };
-			_connectedIPAddressList.Clear();
+			ConnectedIPAddressList.Clear();
 			_newSyncShooter.ConnectCamera().ToList().ForEach( adrs => {
-				_connectedIPAddressList.Add( adrs );
+				ConnectedIPAddressList.Add( adrs );
 				notification.ConnectedItems.Add( adrs );
 			} );
-			// SyncshooterDefs にあるIP Addressの中に接続できたカメラがない場合は、そのアドレスの一覧を表示する
-			var allList = _newSyncShooter.GetSyncshooterDefs().GetAllCameraIPAddress();
-			var exceptList = allList.Except( _connectedIPAddressList ).ToList();
-			exceptList.ForEach( adrs => notification.NotConnectedItems.Add( adrs ) );
-			CameraConnectionRequest.Raise( notification );
-			this.IsCameraConnected.Value = ( _connectedIPAddressList.Count > 0 );
 
-			CameraTree.Clear();
-			CameraTree.Add( new CameraTreeItem( _connectedIPAddressList ) );
+			// SyncshooterDefs にあるIP Addressの中に接続できたカメラがない場合は、そのアドレスの一覧を作る
+			var allList = _newSyncShooter.GetSyncshooterDefs().GetAllCameraIPAddress();
+			var exceptList = allList.Except( ConnectedIPAddressList ).ToList();
+			exceptList.ForEach( adrs => notification.NotConnectedItems.Add( adrs ) );
+
+			CameraConnectionRequest.Raise( notification );
 		}
 
 		/// <summary>
@@ -300,7 +307,7 @@ namespace TestHostApp2.ViewModels
 		{
 			IsCameraPreviewing.Value = false;
 			// TODO: 仕様を確認すること
-			_connectedIPAddressList.ToList().ForEach( adrs => {
+			ConnectedIPAddressList.ToList().ForEach( adrs => {
 				var param = _newSyncShooter.GetCameraParam( adrs );
 				param.Orientation = 1;
 				_newSyncShooter.SetCameraParam( adrs, param );
@@ -327,40 +334,42 @@ namespace TestHostApp2.ViewModels
 			try {
 				Directory.CreateDirectory( sTargetDir );
 
-				//// 正面カメラの画像を取得する
-				//byte[] imaegData = _newSyncShooter.GetPreviewImageFront();
-				//if ( imaegData.Length == 0 ) {
-				//	// TODO: 「正面カメラの画像を取得できませんでした」
-				//	return;
-				//}
-				//var ms = new MemoryStream( imaegData );
-				//BitmapSource bitmapSource = BitmapFrame.Create( ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad );
+				// 正面カメラの画像を取得する
+				byte[] imaegData = _newSyncShooter.GetPreviewImageFront();
+				if ( imaegData.Length == 0 ) {
+					OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, "正面カメラの画像を取得できませんでした。" );
+					return;
+				}
+				var ms = new MemoryStream( imaegData );
+				BitmapSource bitmapSource = BitmapFrame.Create( ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad );
 
 				// カメラ画像転送ダイアログを開く
 				var notification2 = new ImagTransferingNotification()
 				{
 					Title = "カメラ画像転送",
 					SyncShooter = _newSyncShooter,
-					ConnectedIPAddressList = _connectedIPAddressList,
+					ConnectedIPAddressList = ConnectedIPAddressList,
 					TargetDir = sTargetDir,
-					//Image = bitmapSource,
+					Image = bitmapSource,
 				};
 				var t = DateTime.Now;
+
+				this.ImageTransferingRequest.Raise( notification2 );
 				//ImageTransferingRequest.Raise( notification2 );
 				//if ( notification.Confirmed ) {
 
-				_connectedIPAddressList.AsParallel().ForAll( adrs =>
-				{
-					// 画像を撮影＆取得
-					byte[] data = _newSyncShooter.GetFullImageInJpeg( adrs );
-					// IP Address の第4オクテットのファイル名で保存する
-					int idx = adrs.LastIndexOf('.');
-					int adrs4th = int.Parse(adrs.Substring( idx  + 1 ));
-					String path = Path.Combine( sTargetDir, string.Format( "{0}.jpg", adrs4th ) );
-					using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-						fs.Write( data, 0, (int) data.Length );
-					}
-				} );
+				//ConnectedIPAddressList.AsParallel().ForAll( adrs =>
+				//{
+				//	// 画像を撮影＆取得
+				//	byte[] data = _newSyncShooter.GetFullImageInJpeg( adrs );
+				//	// IP Address の第4オクテットのファイル名で保存する
+				//	int idx = adrs.LastIndexOf('.');
+				//	int adrs4th = int.Parse(adrs.Substring( idx  + 1 ));
+				//	String path = Path.Combine( sTargetDir, string.Format( "{0}.jpg", adrs4th ) );
+				//	using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+				//		fs.Write( data, 0, (int) data.Length );
+				//	}
+				//} );
 
 				//// TODO: カメラ画像転送ダイアログを閉じる
 				//var notification3 = new ClosingNotificaton();
@@ -371,22 +380,26 @@ namespace TestHostApp2.ViewModels
 				FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
 
 				TimeSpan ts = DateTime.Now - t;
-				SowInformationMessage( sTargetDir + "\n\nElapsed: " + ts.ToString( "s\\.fff" ) + " sec" );
+				OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK,
+					sTargetDir + "\n\nElapsed: " + ts.ToString( "s\\.fff" ) + " sec" );
 				//}
 
 			} catch ( Exception e ) {
-				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
+				OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
 			}
 		}
 
 		/// <summary>
 		/// 画像ファイル転送
 		/// </summary>
-		void RaiseImageTransfering()
-		{
-			var notification = new Confirmation();
-			ImageTransferingRequest.Raise( notification );
+		//void RaiseImageTransfering()
+		//{
+		//	var notification = new Confirmation();
+		//	ImageTransferingRequest.Raise( notification );
+		//}
 
+		private void OnImageTransferingClosing( object sender, System.ComponentModel.CancelEventArgs e )
+		{
 		}
 
 		/// <summary>
@@ -396,10 +409,7 @@ namespace TestHostApp2.ViewModels
 		{
 			IsCameraPreviewing.Value = false;
 			_newSyncShooter.StopCamera( false );
-			_connectedIPAddressList.Clear();
-			this.IsCameraConnected.Value = ( _connectedIPAddressList.Count > 0 );
-			CameraTree.Clear();
-			CameraTree.Add( new CameraTreeItem( _connectedIPAddressList ) );
+			ConnectedIPAddressList.Clear();
 		}
 
 		/// <summary>
@@ -409,10 +419,7 @@ namespace TestHostApp2.ViewModels
 		{
 			IsCameraPreviewing.Value = false;
 			_newSyncShooter.StopCamera( true );
-			_connectedIPAddressList.Clear();
-			this.IsCameraConnected.Value = ( _connectedIPAddressList.Count > 0 );
-			CameraTree.Clear();
-			CameraTree.Add( new CameraTreeItem( _connectedIPAddressList ) );
+			ConnectedIPAddressList.Clear();
 		}
 
 		void RaiseCameraFront()
@@ -425,7 +432,7 @@ namespace TestHostApp2.ViewModels
 					ShowPreviewImage( data );
 				}
 			} catch ( Exception e ) {
-				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
+				OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
 			}
 		}
 
@@ -439,7 +446,7 @@ namespace TestHostApp2.ViewModels
 					ShowPreviewImage( data );
 				}
 			} catch ( Exception e ) {
-				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
+				OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
 			}
 		}
 
@@ -453,7 +460,7 @@ namespace TestHostApp2.ViewModels
 					ShowPreviewImage( data );
 				}
 			} catch ( Exception e ) {
-				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
+				OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
 			}
 		}
 
@@ -467,7 +474,7 @@ namespace TestHostApp2.ViewModels
 					ShowPreviewImage( data );
 				}
 			} catch ( Exception e ) {
-				MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
+				OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
 			}
 		}
 
@@ -486,9 +493,9 @@ namespace TestHostApp2.ViewModels
 			if ( notification.Confirmed ) {
 
 				if ( NetworkInterface.GetIsNetworkAvailable() ) {
-					MessageBox.Show( "ネットワークに接続されています", this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Information );
+					OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK, "ネットワークに接続されています" );
 				} else {
-					MessageBox.Show( "ネットワークに接続されていません", this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Warning );
+					OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK, "ネットワークに接続されていません" );
 				}
 			}
 		}
@@ -633,7 +640,7 @@ namespace TestHostApp2.ViewModels
 							ShowPreviewImage( data );
 						}
 					} catch ( Exception e ) {
-						MessageBox.Show( e.Message, this.Title.Value, MessageBoxButton.OK, MessageBoxImage.Error );
+						OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
 					}
 				}
 			}

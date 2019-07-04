@@ -64,6 +64,7 @@
     <Compile Include="Notifications\CameraCapturingNotification.cs" />
     <Compile Include="Notifications\ClosingNotificaton.cs" />
     <Compile Include="Notifications\ImagTransferingNotification.cs" />
+    <Compile Include="Notifications\MessageBoxNotification.cs" />
     <Compile Include="Notifications\NetworkSettingNotification.cs" />
     <Compile Include="Notifications\NewProjectNotification.cs" />
     <Compile Include="Notifications\ThreeDBuildingNotification.cs" />
@@ -78,9 +79,11 @@
     <Compile Include="Views\CameraCapturingView.xaml.cs">
       <DependentUpon>CameraCapturingView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\CloseWindowAction.cs" />
     <Compile Include="Views\ImageTransferingView.xaml.cs">
       <DependentUpon>ImageTransferingView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\MessageBoxAction.cs" />
     <Compile Include="Views\NavigationTree.xaml.cs">
       <DependentUpon>NavigationTree.xaml</DependentUpon>
     </Compile>

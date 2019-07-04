@@ -38,17 +38,10 @@
 			<cmDlg:PopupCommonDialogAction CommonDialogType="{x:Type dlg:VistaFolderBrowserDialog}" />
 		</prism:InteractionRequestTrigger>
 
-		<prism:InteractionRequestTrigger SourceObject="{Binding MessageBoxRequest}">
-			<prism:PopupWindowAction IsModal="True" WindowStartupLocation="CenterOwner">
-				<prism:PopupWindowAction.WindowStyle>
-					<Style TargetType="Window">
-						<Setter Property="ShowInTaskbar" Value="False" />
-						<Setter Property="SizeToContent" Value="WidthAndHeight" />
-					</Style>
-				</prism:PopupWindowAction.WindowStyle>
-			</prism:PopupWindowAction>
+		<prism:InteractionRequestTrigger SourceObject="{Binding OpenMessageBoxRequest, Mode=OneWay}">
+			<views:MessageBoxAction/>
 		</prism:InteractionRequestTrigger>
-
+		
 		<prism:InteractionRequestTrigger SourceObject="{Binding NewProjectRequest}">
 			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
 				<prism:PopupWindowAction.WindowContent>
@@ -80,6 +73,9 @@
 				</prism:PopupWindowAction.WindowContent>
 			</prism:PopupWindowAction>
 		</prism:InteractionRequestTrigger>
+		<!--<prism:InteractionRequestTrigger SourceObject="{Binding ImageTransferingClosingRequest}">
+			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True"/>
+		</prism:InteractionRequestTrigger>-->
 
 		<prism:InteractionRequestTrigger SourceObject="{Binding NetworkSettingRequest}">
 			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">

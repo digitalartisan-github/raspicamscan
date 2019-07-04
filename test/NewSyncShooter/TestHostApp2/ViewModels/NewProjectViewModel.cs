@@ -14,15 +14,15 @@ namespace TestHostApp2.ViewModels
 		public Action FinishInteraction { get; set; }
 		private IConfirmation _notification;
 
-		public ReactiveProperty<string> BaseFolderPath { get; set; } = new ReactiveProperty<string>( string.Empty );
-		public ReactiveProperty<string> ProjectName { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> BaseFolderPath { get; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> ProjectName { get; } = new ReactiveProperty<string>( string.Empty );
 		public ReadOnlyReactiveProperty<bool> IsProjectNameValid { get; }
-		public ReactiveProperty<string> ProjectComment { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> ProjectComment { get; } = new ReactiveProperty<string>( string.Empty );
 
-		public InteractionRequest<INotification> BrowseFolderRequest { get; set; }
-		public DelegateCommand BrowseFolderCommand { get; private set; }
-		public DelegateCommand OkCommand { get; private set; }
-		public DelegateCommand CancelCommand { get; private set; }
+		public InteractionRequest<INotification> BrowseFolderRequest { get; }
+		public DelegateCommand BrowseFolderCommand { get; }
+		public DelegateCommand OkCommand { get; }
+		public DelegateCommand CancelCommand { get; }
 
 		/// <summary>
 		/// コンストラクタ

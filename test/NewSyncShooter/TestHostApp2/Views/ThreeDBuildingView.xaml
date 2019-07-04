@@ -39,7 +39,7 @@
 		</StackPanel>
 		<CheckBox Grid.Row="2" Grid.Column="1" VerticalContentAlignment="Center" Content="ペット台の自動カット" Margin="4" IsChecked="{Binding IsCutPetTable.Value}">
 		</CheckBox>
-		<CheckBox Grid.Row="3" Grid.Column="1" VerticalContentAlignment="Center" Content="作成済みのモデルはスキップ" Margin="4" IsChecked="{Binding IsEnableSkipAlreadyBuilt.Value}">
+		<CheckBox Grid.Row="3" Grid.Column="1" VerticalContentAlignment="Center" Content="作成済みのモデルはスキップ" Margin="4" IsChecked="{Binding IsSkipAlreadyBuilt.Value}">
 			<CheckBox.Visibility>
 				<Binding Path="IsEnableSkipAlreadyBuilt.Value">
 					<Binding.Converter>
