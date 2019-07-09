@@ -62,7 +62,7 @@ namespace TestHostApp2.ViewModels
 				await Task.Factory.StartNew( () => {
 					int progressCount = this.ProgressValue.Value = 0;
 					notification.ConnectedIPAddressList.AsParallel().ForAll( adrs => {
-					//notification.ConnectedIPAddressList.ToList().ForEach( adrs => {
+						//notification.ConnectedIPAddressList.ToList().ForEach( adrs => {
 						if ( token.IsCancellationRequested == false ) {
 							// 画像を撮影＆取得
 							byte[] data = notification.SyncShooter.GetFullImageInJpeg( adrs );
@@ -77,8 +77,8 @@ namespace TestHostApp2.ViewModels
 						}
 					} );
 				} );
-			} catch (OperationCanceledException ex) {
-				Console.WriteLine( "Canceled: {0}", ex.Message );
+			} catch ( OperationCanceledException ex ) {
+				System.Diagnostics.Debug.WriteLine( "Canceled: {0}", ex.Message );
 			}
 			// メインスレッドに処理を戻して、ウインドウを閉じる処理を実行する
 			_mainContext.Post( _ => CloseWindowRequest.Raise( null ), null );

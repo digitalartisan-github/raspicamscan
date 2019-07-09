@@ -73,9 +73,6 @@
 				</prism:PopupWindowAction.WindowContent>
 			</prism:PopupWindowAction>
 		</prism:InteractionRequestTrigger>
-		<!--<prism:InteractionRequestTrigger SourceObject="{Binding ImageTransferingClosingRequest}">
-			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True"/>
-		</prism:InteractionRequestTrigger>-->
 
 		<prism:InteractionRequestTrigger SourceObject="{Binding NetworkSettingRequest}">
 			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
@@ -182,7 +179,7 @@
 
 					<ad:LayoutDocumentPane ShowHeader="False">
 						<ad:LayoutDocument x:Name="ViewWindow" Title="View" CanClose="False">
-							<Image Name="PreviewImage" Source="{Binding PreviewingImage.Value}" Width="auto"/>
+							<Image Name="PreviewImage" Source="{Binding PreviewingImage.Value}" Width="auto" MinWidth="600"/>
 						</ad:LayoutDocument>
 					</ad:LayoutDocumentPane>
 				</ad:LayoutPanel>

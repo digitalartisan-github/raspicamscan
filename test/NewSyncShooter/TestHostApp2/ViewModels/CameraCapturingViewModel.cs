@@ -21,7 +21,8 @@ namespace TestHostApp2.ViewModels
 
 		public CameraCapturingViewModel()
 		{
-			OkCommand = CapturingName.Select( s => !string.IsNullOrEmpty( s ) ).ToReactiveCommand();
+			//OkCommand = CapturingName.Select( s => !string.IsNullOrEmpty( s ) ).ToReactiveCommand();
+			OkCommand = new ReactiveCommand();
 			OkCommand.Subscribe( OKInteraction );
 			CancelCommand = new ReactiveCommand();
 			CancelCommand.Subscribe( CancelInteraction );

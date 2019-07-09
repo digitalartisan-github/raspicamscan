@@ -52,7 +52,6 @@ namespace TestHostApp2.ViewModels
 		public InteractionRequest<INotification> CameraConnectionRequest { get; } = new InteractionRequest<INotification>();
 		public InteractionRequest<INotification> CameraCapturingRequest { get; } = new InteractionRequest<INotification>();
 		public InteractionRequest<INotification> ImageTransferingRequest { get; } = new InteractionRequest<INotification>();
-		//public InteractionRequest<INotification> ImageTransferingClosingRequest { get; } = new InteractionRequest<INotification>();
 		public InteractionRequest<INotification> NetworkSettingRequest { get; } = new InteractionRequest<INotification>();
 		public InteractionRequest<INotification> ThreeDBuildingOneRequest { get; } = new InteractionRequest<INotification>();
 		public InteractionRequest<INotification> ThreeDBuildingAllRequest { get; } = new InteractionRequest<INotification>();
@@ -164,8 +163,6 @@ namespace TestHostApp2.ViewModels
 			CameraSettingCommand.Subscribe( RaiseCameraSetting );
 			CameraCapturingCommand = this.IsCameraConnected.CombineLatest( this.ProjectName, ( c, p ) => c && !string.IsNullOrEmpty( p ) ).ToReactiveCommand();
 			CameraCapturingCommand.Subscribe( RaiseCameraCapturing );
-			//ImageTransferingCommand = new ReactiveCommand();
-			//ImageTransferingCommand.Subscribe( RaiseImageTransfering );
 			CameraStopCommand = this.IsCameraConnected.ToReactiveCommand();
 			CameraStopCommand.Subscribe( RaiseCameraStop );
 			CameraRebootCommand = this.IsCameraConnected.ToReactiveCommand();
@@ -327,17 +324,18 @@ namespace TestHostApp2.ViewModels
 			// プレビュー中なら停止する
 			IsCameraPreviewing.Value = false;
 
-			// 撮影フォルダ名：
-			// プロジェクトのフォルダ名＋現在の年月日時分秒＋撮影番号からなるフォルダ名のフォルダに画像を保存する
-			string sTargetDir = Path.Combine( this.ProjectFolderPath.Value,
-				DateTime.Now.ToString("yyyyMMdd-HHmmss") + string.Format("({0})", notification.CapturingName) );
 			try {
+				// 撮影フォルダ名：
+				// プロジェクトのフォルダ名＋現在の年月日時分秒＋撮影番号からなるフォルダ名のフォルダに画像を保存する
+				string sTargetDir = Path.Combine( this.ProjectFolderPath.Value,
+				DateTime.Now.ToString("yyyyMMdd-HHmmss") + string.Format("({0})", notification.CapturingName) );
 				Directory.CreateDirectory( sTargetDir );
 
 				// 正面カメラの画像を取得する
 				byte[] imaegData = _newSyncShooter.GetPreviewImageFront();
 				if ( imaegData.Length == 0 ) {
-					OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, "正面カメラの画像を取得できませんでした。" );
+					OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK,
+						"正面カメラの画像を取得できませんでした。" );
 					return;
 				}
 				var ms = new MemoryStream( imaegData );
@@ -355,51 +353,18 @@ namespace TestHostApp2.ViewModels
 				var t = DateTime.Now;
 
 				this.ImageTransferingRequest.Raise( notification2 );
-				//ImageTransferingRequest.Raise( notification2 );
-				//if ( notification.Confirmed ) {
-
-				//ConnectedIPAddressList.AsParallel().ForAll( adrs =>
-				//{
-				//	// 画像を撮影＆取得
-				//	byte[] data = _newSyncShooter.GetFullImageInJpeg( adrs );
-				//	// IP Address の第4オクテットのファイル名で保存する
-				//	int idx = adrs.LastIndexOf('.');
-				//	int adrs4th = int.Parse(adrs.Substring( idx  + 1 ));
-				//	String path = Path.Combine( sTargetDir, string.Format( "{0}.jpg", adrs4th ) );
-				//	using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-				//		fs.Write( data, 0, (int) data.Length );
-				//	}
-				//} );
-
-				//// TODO: カメラ画像転送ダイアログを閉じる
-				//var notification3 = new ClosingNotificaton();
-				//ImageTransferingRequest.Raise( notification3 );
-
-				// 「ファイルビュー」表示を更新
-				FileTree.Clear();
-				FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
 
 				TimeSpan ts = DateTime.Now - t;
 				OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK,
 					sTargetDir + "\n\nElapsed: " + ts.ToString( "s\\.fff" ) + " sec" );
-				//}
 
+				// 「ファイルビュー」表示を更新
+				FileTree.Clear();
+				FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
+				
 			} catch ( Exception e ) {
 				OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
 			}
-		}
-
-		/// <summary>
-		/// 画像ファイル転送
-		/// </summary>
-		//void RaiseImageTransfering()
-		//{
-		//	var notification = new Confirmation();
-		//	ImageTransferingRequest.Raise( notification );
-		//}
-
-		private void OnImageTransferingClosing( object sender, System.ComponentModel.CancelEventArgs e )
-		{
 		}
 
 		/// <summary>
@@ -601,7 +566,7 @@ namespace TestHostApp2.ViewModels
 			}
 		}
 
-		/// <summary>
+	/// <summary>
 		/// ファイルビューのコンテキストメニュー　[フォルダを削除]
 		/// </summary>
 		void RaiseFileViewDeleteFolderCommand()
@@ -611,14 +576,17 @@ namespace TestHostApp2.ViewModels
 				var treeItem = item as FileTreeItem;
 				if ( treeItem.IsSelected ) {
 					var path = treeItem._Directory.FullName;
-					Microsoft.VisualBasic.FileIO.FileSystem.DeleteDirectory( path,
-						Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
-						Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin,
-						Microsoft.VisualBasic.FileIO.UICancelOption.DoNothing );
+					try {
+						Microsoft.VisualBasic.FileIO.FileSystem.DeleteDirectory( path,
+							Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
+							Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin,
+							Microsoft.VisualBasic.FileIO.UICancelOption.DoNothing );
+					} catch (Exception e) {
+						OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
+					}
 
 					FileTree.Clear();
 					FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
-
 				}
 			}
 		}

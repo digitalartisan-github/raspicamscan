@@ -1,9 +1,9 @@
 {
-  "front_camera":101,
-  "back_camera": 102,
-  "right_camera":103,
-  "left_camera": 104,
-  "ip_template":"192.168.1.%d",
+  "front_camera":11,
+  "back_camera": 12,
+  "right_camera":13,
+  "left_camera": 14,
+  "ip_template":"192.168.55.%d",
   "camera_group_num":16,
   "camera_group":{
     "0" : [71,31,103,86,49,105,66],

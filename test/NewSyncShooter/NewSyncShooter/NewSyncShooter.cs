@@ -12,9 +12,9 @@ namespace NewSyncShooter
 		// マルチキャストグループのIPアドレスとポート
 		// （syncshooter.py 中の MCAST_GRP, MCAST_PORT に対応）
 		private static readonly string MCAST_GRP = "239.2.1.1";
-		private static readonly int MCAST_PORT = 27781;					// マルチキャスト送信ポート
-		private static readonly int SENDBACK_PORT = 27782;				// マルチキャストでラズパイからの返信ポート
-		private static readonly int SHOOTIMAGESERVER_PORT = 27783;		// ラズパイからの画像返信用ポート
+		private static readonly int MCAST_PORT = 27781;                 // マルチキャスト送信ポート
+		private static readonly int SENDBACK_PORT = 27782;              // マルチキャストでラズパイからの返信ポート
+		private static readonly int SHOOTIMAGESERVER_PORT = 27783;      // ラズパイからの画像返信用ポート
 
 		private SyncshooterDefs _syncshooterDefs;
 		private MultiCastClient _mcastClient;
@@ -29,7 +29,7 @@ namespace NewSyncShooter
 
 		~NewSyncShooter()
 		{
-			if ( _mcastClient != null) {
+			if ( _mcastClient != null ) {
 				_mcastClient.Close();
 			}
 		}
@@ -38,7 +38,7 @@ namespace NewSyncShooter
 		{
 			// Loading SyncshooterDefs
 			_syncshooterDefs = SyncshooterDefs.Deserialize( jsonFilePath );
-			if (_mapIP_Port != null) {
+			if ( _mapIP_Port != null ) {
 				_mapIP_Port.Clear();
 			}
 		}
@@ -48,8 +48,11 @@ namespace NewSyncShooter
 			return _syncshooterDefs;
 		}
 
-		// カメラと接続する
-		// 戻り値：	接続できたカメラのIPアドレスの配列
+		/// <summary>
+		/// カメラと接続する
+		/// 戻り値：	接続できたカメラのIPアドレスの配列
+		/// </summary>
+		/// <returns></returns>
 		public IEnumerable<string> ConnectCamera()
 		{
 			// UDP マルチキャストを開く
@@ -61,7 +64,11 @@ namespace NewSyncShooter
 			return GetConnectedHostAddress();
 		}
 
-		// 指定IPアドレスのカメラのパラメータを取得する
+		/// <summary>
+		/// 指定IPアドレスのカメラのパラメータを取得する
+		/// </summary>
+		/// <param name="ipAddress"></param>
+		/// <returns></returns>
 		public CameraParam GetCameraParam( string ipAddress )
 		{
 			try {
@@ -90,7 +97,11 @@ namespace NewSyncShooter
 			}
 		}
 
-		// 指定IPアドレスのカメラにパラメータを設定する
+		/// <summary>
+		/// 指定IPアドレスのカメラにパラメータを設定する
+		/// </summary>
+		/// <param name="ipAddress"></param>
+		/// <param name="param"></param>
 		public void SetCameraParam( string ipAddress, CameraParam param )
 		{
 			try {
@@ -110,7 +121,7 @@ namespace NewSyncShooter
 				byte[] rcvBytes = new byte[tcp.Client.Available];
 				ns.Read( rcvBytes, 0, tcp.Client.Available );
 				string rcvString = System.Text.Encoding.UTF8.GetString( rcvBytes );
-				if ( rcvString != "ACK") {
+				if ( rcvString != "ACK" ) {
 					return;
 				}
 
@@ -124,13 +135,17 @@ namespace NewSyncShooter
 			}
 		}
 
-		// 指定IPアドレスのカメラのプレビュー画像データを取得する
-		public byte[] GetPreviewImage(string ipAddress)
+		/// <summary>
+		/// 指定IPアドレスのカメラのプレビュー画像データを取得する
+		/// </summary>
+		/// <param name="ipAddress"></param>
+		/// <returns></returns>
+		public byte[] GetPreviewImage( string ipAddress )
 		{
 			TcpClient tcp = new TcpClient( ipAddress, SHOOTIMAGESERVER_PORT );
 			System.Net.Sockets.NetworkStream ns = tcp.GetStream();
-			ns.ReadTimeout = 10000;
-			ns.WriteTimeout = 10000;
+			ns.ReadTimeout = 5000;
+			ns.WriteTimeout = 5000;
 			MemoryStream ms = new MemoryStream();
 
 			// get preview image コマンドを送信
@@ -139,22 +154,35 @@ namespace NewSyncShooter
 			ns.Write( cmdBytes, 0, cmdBytes.Length );
 
 			// データを受信
-			while (ns.DataAvailable == false) {
-			}
 			ulong sum = 0;
 			ulong bytes_to_read = 0;
 			do {
 				byte[] rcvBytes = new byte[tcp.Client.Available];
-				int resSize = ns.Read( rcvBytes, 0, rcvBytes.Length );
-				if (sum == 0) {
-					// 先頭の4バイトには、次に続くデータのサイズが書かれている
-					bytes_to_read = ((ulong)rcvBytes[0]) | ((ulong)rcvBytes[1] << 8) | ((ulong)rcvBytes[2] << 16) | ((ulong)rcvBytes[3] << 24);
-					Console.Error.WriteLine( "bytes_to_read = {0}", bytes_to_read );
+				int resSize = 0;
+				try {
+					resSize = ns.Read( rcvBytes, 0, rcvBytes.Length );
+				} catch ( IOException e ) {
+					if ( e.InnerException is SocketException ) {
+						var socketException = e.InnerException as SocketException;
+						if ( socketException.SocketErrorCode == SocketError.TimedOut ) {
+							resSize = 0;    // 再試行させる
+						} else {
+							throw e;
+						}
+					} else {
+						throw e;
+					}
 				}
-				sum += (ulong)resSize;
+				if ( resSize == 0 ) {
+					continue;
+				}
+				if ( sum == 0 ) {
+					// 先頭の4バイトには、次に続くデータのサイズが書かれている
+					bytes_to_read = ( (ulong) rcvBytes[0] ) | ( (ulong) rcvBytes[1] << 8 ) | ( (ulong) rcvBytes[2] << 16 ) | ( (ulong) rcvBytes[3] << 24 );
+				}
+				sum += (ulong) resSize;
 				ms.Write( rcvBytes, 0, resSize );
-			} while (sum < bytes_to_read + 4);
-			//Console.Error.WriteLine( "size = {0}", (int) sum - 4 );
+			} while ( sum < bytes_to_read + 4 );
 			ms.Close();
 			ns.Close();
 			tcp.Close();
@@ -163,7 +191,7 @@ namespace NewSyncShooter
 
 		public byte[] GetPreviewImageFront()
 		{
-			if (_syncshooterDefs.front_camera == -1 ) {
+			if ( _syncshooterDefs.front_camera == -1 ) {
 				return Array.Empty<byte>();
 			} else {
 				return GetPreviewImage( _syncshooterDefs.FrontCameraAddress );
@@ -194,48 +222,70 @@ namespace NewSyncShooter
 			}
 		}
 
-		public byte[] GetFullImageInJpeg(string ipAddress)
+		/// <summary>
+		/// 指定IPアドレスのカメラの撮影画像を取得する
+		/// </summary>
+		/// <param name="ipAddress"></param>
+		/// <returns></returns>
+		public byte[] GetFullImageInJpeg( string ipAddress )
 		{
 			_mcastClient.SendCommand( "SHJ" );
 			TcpClient tcp = new TcpClient( ipAddress, SHOOTIMAGESERVER_PORT );
 			System.Net.Sockets.NetworkStream ns = tcp.GetStream();
-			ns.ReadTimeout = 10000;
-			ns.WriteTimeout = 10000;
+			ns.ReadTimeout = 5000;
+			ns.WriteTimeout = 5000;
 			MemoryStream ms = new MemoryStream();
 
 			// full image 取得コマンドを送信
 			string cmd = "IMG";
 			byte[] cmdBytes = System.Text.Encoding.UTF8.GetBytes( cmd );
 			ns.Write( cmdBytes, 0, cmdBytes.Length );
-
+			 
 			// データを受信
-			while ( ns.DataAvailable == false ) {
-			}
 			ulong sum = 0;
 			ulong bytes_to_read = 0;
 			do {
 				byte[] rcvBytes = new byte[tcp.Client.Available];
-				int resSize = ns.Read( rcvBytes, 0, rcvBytes.Length );
+				int resSize = 0;
+				try {
+					resSize = ns.Read( rcvBytes, 0, rcvBytes.Length );
+				} catch ( IOException e ) {
+					if ( e.InnerException is SocketException ) {
+						var socketException = e.InnerException as SocketException;
+						if ( socketException.SocketErrorCode == SocketError.TimedOut ) {
+							resSize = 0;    // 再試行させる
+						} else {
+							throw e;
+						}
+					} else {
+						throw e;
+					}
+				}
+				if ( resSize == 0 ) {
+					continue;
+				}
 				if ( sum == 0 ) {
 					// 先頭の4バイトには、次に続くデータのサイズが書かれている
 					bytes_to_read = ( (ulong) rcvBytes[0] ) | ( (ulong) rcvBytes[1] << 8 ) | ( (ulong) rcvBytes[2] << 16 ) | ( (ulong) rcvBytes[3] << 24 );
-					//Console.WriteLine( "{0}: bytes_to_read = {1}", ipAddress, bytes_to_read );
 				}
 				sum += (ulong) resSize;
 				ms.Write( rcvBytes, 0, resSize );
 			} while ( sum < bytes_to_read + 4 );
-			//Console.WriteLine( "size = {0}", (int) sum - 4 );
+			System.Diagnostics.Debug.WriteLine( "{0}: size = {1}", ipAddress, ( int) sum - 4 );
 			ms.Close();
 			ns.Close();
 			tcp.Close();
-			return ms.GetBuffer().Skip(4).ToArray();
+			return ms.GetBuffer().Skip( 4 ).ToArray();
 		}
 
-		// カメラを停止する
-		// 入力：reboot : TRUE=再起動, FALSE=停止
-		public void StopCamera(bool reboot)
+		/// <summary>
+		/// カメラを停止する
+		/// 入力：reboot : TRUE=再起動, FALSE=停止
+		/// </summary>
+		/// <param name="reboot"></param>
+		public void StopCamera( bool reboot )
 		{
-			if ( _mcastClient  != null) {
+			if ( _mcastClient != null ) {
 				_mcastClient.SendCommand( reboot ? "RBT" : "SDW" );
 				_mcastClient = null;
 			}
@@ -249,7 +299,7 @@ namespace NewSyncShooter
 
 			// マルチキャストに参加しているラズパイに"INQ"コマンドを送信
 			_mcastClient.SendCommand( "INQ" );
-			System.Threading.Thread.Sleep( 1000 );	// waitをおかないと、この後すぐに返事を受け取れない場合がある
+			System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある
 
 			var mapIPvsPort = new Dictionary<string, int>();
 			try {
@@ -263,7 +313,7 @@ namespace NewSyncShooter
 						mapIPvsPort[remoteEP.Address.ToString()] = remoteEP.Port;
 					}
 				} while ( udp.Available > 0 );
-			} catch (Exception e) {
+			} catch ( Exception e ) {
 				Console.Error.WriteLine( e.Message );
 				udp.Close();
 				return Array.Empty<string>();
