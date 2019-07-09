@@ -223,13 +223,21 @@ namespace NewSyncShooter
 		}
 
 		/// <summary>
+		/// 撮影コマンドを全ラズパイカメラへ送信する
+		/// </summary>
+		public void SendCommandToGetFullImageInJpeg()
+		{
+			_mcastClient.SendCommand( "SHJ" );
+		}
+
+		/// <summary>
 		/// 指定IPアドレスのカメラの撮影画像を取得する
+		/// （先に SendCommandToGetFullImageInJpeg()で全ラズパイカメラに撮影命令を送信しておく ）
 		/// </summary>
 		/// <param name="ipAddress"></param>
 		/// <returns></returns>
 		public byte[] GetFullImageInJpeg( string ipAddress )
 		{
-			_mcastClient.SendCommand( "SHJ" );
 			TcpClient tcp = new TcpClient( ipAddress, SHOOTIMAGESERVER_PORT );
 			System.Net.Sockets.NetworkStream ns = tcp.GetStream();
 			ns.ReadTimeout = 5000;
@@ -240,13 +248,13 @@ namespace NewSyncShooter
 			string cmd = "IMG";
 			byte[] cmdBytes = System.Text.Encoding.UTF8.GetBytes( cmd );
 			ns.Write( cmdBytes, 0, cmdBytes.Length );
-			 
+
 			// データを受信
 			ulong sum = 0;
 			ulong bytes_to_read = 0;
 			do {
 				byte[] rcvBytes = new byte[tcp.Client.Available];
-				int resSize = 0;
+				int resSize;
 				try {
 					resSize = ns.Read( rcvBytes, 0, rcvBytes.Length );
 				} catch ( IOException e ) {

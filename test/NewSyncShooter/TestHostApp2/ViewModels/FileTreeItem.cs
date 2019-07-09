@@ -45,7 +45,9 @@ namespace TestHostApp2.ViewModels
 				Height = 18,
 				Margin = new Thickness( 0, 0, 4, 0 )
 			} );
-			sp.Children.Add( new TextBlock() { Text = _Directory.Name } );
+			if ( _Directory != null ) {
+				sp.Children.Add( new TextBlock() { Text = _Directory.Name } );
+			}
 			return sp;
 		}
 

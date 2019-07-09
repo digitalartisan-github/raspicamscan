@@ -18,7 +18,7 @@
 			<ColumnDefinition Width="80"/>
 			<ColumnDefinition/>
 		</Grid.ColumnDefinitions>
-		<Label Grid.Row="0" Grid.Column="0" Content="撮影番号 :"/>
+		<Label Grid.Row="0" Grid.Column="0" Content="撮影番号 :" Margin="4" VerticalContentAlignment="Center"/>
 		<TextBox Grid.Row="0" Grid.Column="1" Width="250" Height="24" HorizontalAlignment="Left" Margin="4" Text="{Binding CapturingName.Value, UpdateSourceTrigger=PropertyChanged}"/>
 		<Label Grid.Row="1" Grid.Column="1" Content="撮影フォルダ名の最後に ( )付きで追加されます。"/>
 		<StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="4">

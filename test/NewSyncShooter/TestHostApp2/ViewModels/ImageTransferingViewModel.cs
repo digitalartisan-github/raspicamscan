@@ -19,7 +19,8 @@ namespace TestHostApp2.ViewModels
 		private SynchronizationContext _mainContext = null;
 		private CancellationTokenSource _tokenSource = null;
 
-		//public ReactiveProperty<int> ProgressMaxValue { get; } = new ReactiveProperty<int>( 0 );
+		public ReactiveProperty<int> ProgressMaxValue { get; } = new ReactiveProperty<int>( 0 );
+		public ReactiveProperty<int> ProgressValue { get; } = new ReactiveProperty<int>( 0 );
 		public ReactiveProperty<string> ProgressText { get; } = new ReactiveProperty<string>( string.Empty );
 		public ReactiveProperty<string> Information { get; } = new ReactiveProperty<string>( string.Empty );
 		//public ReactiveProperty<BitmapSource> PreviewingImage { get; } = new ReactiveProperty<BitmapSource>();
@@ -58,12 +59,13 @@ namespace TestHostApp2.ViewModels
 		{
 			CancellationToken token = tokenSource.Token;
 			var notification = _notification as ImagTransferingNotification;
-			//this.ProgressMaxValue.Value = notification.ConnectedIPAddressList.Count();
+			this.ProgressMaxValue.Value = notification.ConnectedIPAddressList.Count();
 			try {
+				notification.SyncShooter.SendCommandToGetFullImageInJpeg();
+				this.ProgressValue.Value = 0;
 				await Task.Factory.StartNew( () => {
 					int progressCount = 0;
 					notification.ConnectedIPAddressList.AsParallel().ForAll( ipAddress => {
-						//notification.ConnectedIPAddressList.ToList().ForEach( adrs => {
 						if ( token.IsCancellationRequested == false ) {
 							// 画像を撮影＆取得
 							byte[] data = notification.SyncShooter.GetFullImageInJpeg( ipAddress );
@@ -76,7 +78,7 @@ namespace TestHostApp2.ViewModels
 								using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
 									fs.Write( data, 0, data.Length );
 								}
-								this.ProgressText.Value = string.Format( "{0}/{1}", ++progressCount, notification.ConnectedIPAddressList.Count() );
+								this.ProgressValue.Value = ++progressCount;
 							}
 						}
 					} );

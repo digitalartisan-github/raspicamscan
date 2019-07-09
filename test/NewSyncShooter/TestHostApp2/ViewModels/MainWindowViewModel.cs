@@ -359,7 +359,7 @@ namespace TestHostApp2.ViewModels
 
 				TimeSpan ts = DateTime.Now - t;
 				OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK,
-					"\n\nElapsed: " + ts.ToString( "s\\.fff" ) + " sec" );
+					"Elapsed : " + ts.ToString( "s\\.fff" ) + " sec" );
 
 				// 「ファイルビュー」表示を更新
 				FileTree.Clear();
@@ -579,17 +579,19 @@ namespace TestHostApp2.ViewModels
 				var treeItem = item as FileTreeItem;
 				if ( treeItem.IsSelected ) {
 					var path = treeItem._Directory.FullName;
-					try {
-						Microsoft.VisualBasic.FileIO.FileSystem.DeleteDirectory( path,
-							Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
-							Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin,
-							Microsoft.VisualBasic.FileIO.UICancelOption.DoNothing );
-					} catch (Exception e) {
-						OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
+					if ( OpenMessageBox( this.Title.Value, MessageBoxImage.Question, MessageBoxButton.OKCancel, MessageBoxResult.None,
+						string.Format( "{0} を削除してもよろしいですか？", path ) ) == MessageBoxResult.OK ) {
+						try {
+							Microsoft.VisualBasic.FileIO.FileSystem.DeleteDirectory( path,
+								Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
+								Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin,
+								Microsoft.VisualBasic.FileIO.UICancelOption.DoNothing );
+						} catch ( Exception e ) {
+							OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
+						}
+						FileTree.Clear();
+						FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
 					}
-
-					FileTree.Clear();
-					FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
 				}
 			}
 		}

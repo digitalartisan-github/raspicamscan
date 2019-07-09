@@ -16,10 +16,12 @@
 	</i:Interaction.Triggers>
 	
 	<StackPanel>
-		<StackPanel Orientation="Horizontal" Margin="8">
-			<Label Content="画像ファイル転送中..." Margin="4"/>
-			<TextBox Text="{Binding ProgressText.Value}" MinWidth="70" Margin="4" VerticalContentAlignment="Center" IsReadOnly="True"/>
-			<Button Content="中止" Width="80" Margin="4" Command="{Binding CancelCommand}"/>
+		<StackPanel Orientation="Horizontal" Margin="0">
+			<Label Content="画像ファイル転送中..." Margin="8"/>
+			<Label Content="{Binding ProgressValue.Value}" Width="30" HorizontalContentAlignment="Right" VerticalContentAlignment="Center"/>
+			<Label Content="/" VerticalContentAlignment="Center"/>
+			<Label Content="{Binding ProgressMaxValue.Value}" Width="30" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"/>
+			<Button Content="中止" Width="80" Margin="8" Command="{Binding CancelCommand}"/>
 		</StackPanel>
 		<ProgressBar Width="auto" Height="24" Margin="8" Maximum="{Binding ProgressMaxValue.Value}" Value="{Binding ProgressValue.Value}"/>
 		<TextBox Text="{Binding Information.Value}" Width="auto" Height="40" Margin="8" IsReadOnly="True"/>
