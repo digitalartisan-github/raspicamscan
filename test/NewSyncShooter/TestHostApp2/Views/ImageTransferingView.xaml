@@ -8,7 +8,7 @@
 						prism:ViewModelLocator.AutoWireViewModel="True"
 						xmlns:local="clr-namespace:TestHostApp2.Views"
 						mc:Ignorable="d" 
-						d:DesignHeight="800" d:DesignWidth="600">
+						d:DesignHeight="190" d:DesignWidth="400">
 	<i:Interaction.Triggers>
 		<prism:InteractionRequestTrigger SourceObject="{Binding CloseWindowRequest, Mode=OneWay}">
 			<local:CloseWindowAction/>
@@ -18,10 +18,11 @@
 	<StackPanel>
 		<StackPanel Orientation="Horizontal" Margin="8">
 			<Label Content="画像ファイル転送中..." Margin="4"/>
-			<Label Content="{Binding ProgressText.Value}" MinWidth="100" Margin="4"/>
+			<TextBox Text="{Binding ProgressText.Value}" MinWidth="70" Margin="4" VerticalContentAlignment="Center" IsReadOnly="True"/>
 			<Button Content="中止" Width="80" Margin="4" Command="{Binding CancelCommand}"/>
 		</StackPanel>
 		<ProgressBar Width="auto" Height="24" Margin="8" Maximum="{Binding ProgressMaxValue.Value}" Value="{Binding ProgressValue.Value}"/>
-		<Image Name="PreviewImage" Source="{Binding PreviewingImage.Value}" Width="600"/>
+		<TextBox Text="{Binding Information.Value}" Width="auto" Height="40" Margin="8" IsReadOnly="True"/>
+		<!--<Image Name="PreviewImage" Source="{Binding PreviewingImage.Value}" Width="600"/>-->
 	</StackPanel>
 </UserControl>

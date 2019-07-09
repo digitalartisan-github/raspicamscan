@@ -327,19 +327,22 @@ namespace TestHostApp2.ViewModels
 			try {
 				// 撮影フォルダ名：
 				// プロジェクトのフォルダ名＋現在の年月日時分秒＋撮影番号からなるフォルダ名のフォルダに画像を保存する
-				string sTargetDir = Path.Combine( this.ProjectFolderPath.Value,
-				DateTime.Now.ToString("yyyyMMdd-HHmmss") + string.Format("({0})", notification.CapturingName) );
+				string sTargetName = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+				if (! string.IsNullOrEmpty( notification.CapturingName )) {
+					sTargetName += string.Format( "({0})", notification.CapturingName );
+				}
+				string sTargetDir = Path.Combine( this.ProjectFolderPath.Value, sTargetName );
 				Directory.CreateDirectory( sTargetDir );
 
-				// 正面カメラの画像を取得する
-				byte[] imaegData = _newSyncShooter.GetPreviewImageFront();
-				if ( imaegData.Length == 0 ) {
-					OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK,
-						"正面カメラの画像を取得できませんでした。" );
-					return;
-				}
-				var ms = new MemoryStream( imaegData );
-				BitmapSource bitmapSource = BitmapFrame.Create( ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad );
+				//// 正面カメラの画像を取得する
+				//byte[] imaegData = _newSyncShooter.GetPreviewImageFront();
+				//if ( imaegData.Length == 0 ) {
+				//	OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK,
+				//		"正面カメラの画像を取得できませんでした。" );
+				//	return;
+				//}
+				//var ms = new MemoryStream( imaegData );
+				//BitmapSource bitmapSource = BitmapFrame.Create( ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad );
 
 				// カメラ画像転送ダイアログを開く
 				var notification2 = new ImagTransferingNotification()
@@ -348,7 +351,7 @@ namespace TestHostApp2.ViewModels
 					SyncShooter = _newSyncShooter,
 					ConnectedIPAddressList = ConnectedIPAddressList,
 					TargetDir = sTargetDir,
-					Image = bitmapSource,
+					//Image = bitmapSource,
 				};
 				var t = DateTime.Now;
 
@@ -356,7 +359,7 @@ namespace TestHostApp2.ViewModels
 
 				TimeSpan ts = DateTime.Now - t;
 				OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK,
-					sTargetDir + "\n\nElapsed: " + ts.ToString( "s\\.fff" ) + " sec" );
+					"\n\nElapsed: " + ts.ToString( "s\\.fff" ) + " sec" );
 
 				// 「ファイルビュー」表示を更新
 				FileTree.Clear();

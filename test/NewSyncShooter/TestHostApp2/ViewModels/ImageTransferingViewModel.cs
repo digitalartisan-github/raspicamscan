@@ -19,9 +19,10 @@ namespace TestHostApp2.ViewModels
 		private SynchronizationContext _mainContext = null;
 		private CancellationTokenSource _tokenSource = null;
 
-		public ReactiveProperty<int> ProgressMaxValue { get; } = new ReactiveProperty<int>( 0 );
-		public ReactiveProperty<int> ProgressValue { get; } = new ReactiveProperty<int>( 0 );
-		public ReactiveProperty<BitmapSource> PreviewingImage { get; } = new ReactiveProperty<BitmapSource>();
+		//public ReactiveProperty<int> ProgressMaxValue { get; } = new ReactiveProperty<int>( 0 );
+		public ReactiveProperty<string> ProgressText { get; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> Information { get; } = new ReactiveProperty<string>( string.Empty );
+		//public ReactiveProperty<BitmapSource> PreviewingImage { get; } = new ReactiveProperty<BitmapSource>();
 
 		public InteractionRequest<Notification> CloseWindowRequest { get; } = new InteractionRequest<Notification>();
 
@@ -57,23 +58,26 @@ namespace TestHostApp2.ViewModels
 		{
 			CancellationToken token = tokenSource.Token;
 			var notification = _notification as ImagTransferingNotification;
-			this.ProgressMaxValue.Value = notification.ConnectedIPAddressList.Count();
+			//this.ProgressMaxValue.Value = notification.ConnectedIPAddressList.Count();
 			try {
 				await Task.Factory.StartNew( () => {
-					int progressCount = this.ProgressValue.Value = 0;
-					notification.ConnectedIPAddressList.AsParallel().ForAll( adrs => {
+					int progressCount = 0;
+					notification.ConnectedIPAddressList.AsParallel().ForAll( ipAddress => {
 						//notification.ConnectedIPAddressList.ToList().ForEach( adrs => {
 						if ( token.IsCancellationRequested == false ) {
 							// 画像を撮影＆取得
-							byte[] data = notification.SyncShooter.GetFullImageInJpeg( adrs );
-							// IP Address の第4オクテットのファイル名で保存する
-							int idx = adrs.LastIndexOf('.');
-							int adrs4th = int.Parse( adrs.Substring( idx  + 1 ) );
-							String path = Path.Combine( notification.TargetDir, string.Format( "{0}.jpg", adrs4th ) );
-							using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
-								fs.Write( data, 0, data.Length );
+							byte[] data = notification.SyncShooter.GetFullImageInJpeg( ipAddress );
+							if ( data.Length > 0 ) {
+								this.Information.Value = ipAddress + " received";
+								// IP Address の第4オクテットのファイル名で保存する
+								int idx = ipAddress.LastIndexOf('.');
+								int adrs4th = int.Parse( ipAddress.Substring( idx  + 1 ) );
+								String path = Path.Combine( notification.TargetDir, string.Format( "{0}.jpg", adrs4th ) );
+								using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+									fs.Write( data, 0, data.Length );
+								}
+								this.ProgressText.Value = string.Format( "{0}/{1}", ++progressCount, notification.ConnectedIPAddressList.Count() );
 							}
-							this.ProgressValue.Value = ( ++progressCount );
 						}
 					} );
 				} );
@@ -92,7 +96,7 @@ namespace TestHostApp2.ViewModels
 				SetProperty( ref _notification, (IConfirmation) value );
 
 				var notification = _notification as ImagTransferingNotification;
-				this.PreviewingImage.Value = notification.Image;
+				//this.PreviewingImage.Value = notification.Image;
 
 				_mainContext = SynchronizationContext.Current;
 				//_tokenSource = new CancellationTokenSource();
