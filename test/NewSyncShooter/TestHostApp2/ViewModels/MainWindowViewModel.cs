@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -357,9 +358,11 @@ namespace TestHostApp2.ViewModels
 
 				this.ImageTransferingRequest.Raise( notification2 );
 
-				TimeSpan ts = DateTime.Now - t;
-				OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK,
-					"Elapsed : " + ts.ToString( "s\\.fff" ) + " sec" );
+				if ( notification2.Confirmed ) {
+					TimeSpan ts = DateTime.Now - t;
+					OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK,
+						"Elapsed : " + ts.ToString( "s\\.fff" ) + " sec" );
+				}
 
 				// 「ファイルビュー」表示を更新
 				FileTree.Clear();
@@ -375,9 +378,12 @@ namespace TestHostApp2.ViewModels
 		/// </summary>
 		void RaiseCameraStop()
 		{
-			IsCameraPreviewing.Value = false;
-			_newSyncShooter.StopCamera( false );
-			ConnectedIPAddressList.Clear();
+			if ( OpenMessageBox( this.Title.Value, MessageBoxImage.Question, MessageBoxButton.YesNo, MessageBoxResult.No,
+				"カメラを停止します。よろしいですか？" ) == MessageBoxResult.Yes ) {
+				IsCameraPreviewing.Value = false;
+				_newSyncShooter.StopCamera( false );
+				ConnectedIPAddressList.Clear();
+			}
 		}
 
 		/// <summary>
@@ -385,9 +391,12 @@ namespace TestHostApp2.ViewModels
 		/// </summary>
 		void RaiseCameraReboot()
 		{
-			IsCameraPreviewing.Value = false;
-			_newSyncShooter.StopCamera( true );
-			ConnectedIPAddressList.Clear();
+			if ( OpenMessageBox( this.Title.Value, MessageBoxImage.Question, MessageBoxButton.YesNo, MessageBoxResult.No,
+				"カメラを再起動します。よろしいですか？" ) == MessageBoxResult.Yes ) {
+				IsCameraPreviewing.Value = false;
+				_newSyncShooter.StopCamera( true );
+				ConnectedIPAddressList.Clear();
+			}
 		}
 
 		void RaiseCameraFront()
@@ -473,34 +482,41 @@ namespace TestHostApp2.ViewModels
 		/// </summary>
 		void RaiseThreeDBuildingOne()
 		{
-			var notification = new ThreeDBuildingNotification
-			{
-				Title = "3Dモデル作成",
-				ImageFolderPath = this.ProjectFolderPath.Value,	// TODO: プロジェクトフォルダの下の、TreeView上で選択中の画像フォルダ
-				ThreeDDataFolderPath = this.ThreeDDataFolderPath.Value,
-				IsCutPetTable = this.IsCutPetTable.Value,
-				IsEnableSkipAlreadyBuilt = false,
-			};
-			ThreeDBuildingOneRequest.Raise( notification );
-			if ( notification.Confirmed ) {
-				this.ThreeDDataFolderPath.Value = notification.ThreeDDataFolderPath;
-				this.IsCutPetTable.Value = notification.IsCutPetTable;
+			var items = this.FileTree.First().Items.SourceCollection;
+			foreach ( var item in items ) {
+				var treeItem = item as FileTreeItem;
+				if ( treeItem.IsSelected ) {
+					var notification = new ThreeDBuildingNotification
+					{
+						Title = "3Dモデル作成",
+						ImageFolderPath = treeItem._Directory.FullName,// プロジェクトフォルダの下の、TreeView上で選択中の画像フォルダ
+						ThreeDDataFolderPath = this.ThreeDDataFolderPath.Value,
+						IsCutPetTable = this.IsCutPetTable.Value,
+						IsEnableSkipAlreadyBuilt = false,
+					};
+					ThreeDBuildingOneRequest.Raise( notification );
+					if ( notification.Confirmed ) {
+						this.ThreeDDataFolderPath.Value = notification.ThreeDDataFolderPath;
+						this.IsCutPetTable.Value = notification.IsCutPetTable;
 
-				var startInfo = new ProcessStartInfo();
-				// バッチファイルを起動する人は、cmd.exeさんなので
-				startInfo.FileName = "cmd.exe";
-				// コマンド処理実行後、コマンドウィンドウ終わるようにする。
-				//（↓「/c」の後の最後のスペース1文字は重要！）
-				startInfo.Arguments = "/c ";
-				// コマンド処理であるバッチファイル （ここも最後のスペース重要）
-				startInfo.Arguments += @"..\..\UserRibbonButtons\button1.bat ";
-				// バッチファイルへの引数 
-				var srgString = this.ProjectFolderPath.Value + " " + this.ThreeDDataFolderPath.Value;
-				startInfo.Arguments += srgString;
-				// ●バッチファイルを別プロセスとして起動
-				var proc = Process.Start(startInfo);
-				// ●上記バッチ処理が終了するまで待ちます。
-				proc.WaitForExit();
+						var startInfo = new ProcessStartInfo();
+						// バッチファイルを起動する人は、cmd.exeさんなので
+						startInfo.FileName = "cmd.exe";
+						// コマンド処理実行後、コマンドウィンドウ終わるようにする。
+						//（↓「/c」の後の最後のスペース1文字は重要！）
+						startInfo.Arguments = "/c ";
+						// コマンド処理であるバッチファイル （ここも最後のスペース重要）
+						startInfo.Arguments += @"..\..\UserRibbonButtons\button1.bat ";
+						// バッチファイルへの引数 
+						var srgString = this.ProjectFolderPath.Value + " " + this.ThreeDDataFolderPath.Value;
+						startInfo.Arguments += srgString;
+						// ●バッチファイルを別プロセスとして起動
+						var proc = Process.Start(startInfo);
+						// ●上記バッチ処理が終了するまで待ちます。
+						proc.WaitForExit();
+					}
+					break;
+				}
 			}
 		}
 

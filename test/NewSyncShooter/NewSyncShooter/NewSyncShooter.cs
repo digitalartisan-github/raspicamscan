@@ -11,14 +11,15 @@ namespace NewSyncShooter
 	{
 		// マルチキャストグループのIPアドレスとポート
 		// （syncshooter.py 中の MCAST_GRP, MCAST_PORT に対応）
-		private static readonly string MCAST_GRP = "239.2.1.1";
-		private static readonly int MCAST_PORT = 27781;                 // マルチキャスト送信ポート
-		private static readonly int SENDBACK_PORT = 27782;              // マルチキャストでラズパイからの返信ポート
-		private static readonly int SHOOTIMAGESERVER_PORT = 27783;      // ラズパイからの画像返信用ポート
+		private static readonly string MCAST_GRP				= "239.2.1.1";
+		private static readonly int MCAST_PORT					= 27781;	// マルチキャスト送信ポート
+		private static readonly int SENDBACK_PORT				= 27782;	// マルチキャストでラズパイからの返信ポート
+		private static readonly int SHOOTIMAGESERVER_PORT       = 27783;	// ラズパイからの画像返信用ポート
+		private static readonly int SHOOTIMAGESERVER_PORT_NUM   = 32;		// ラズパイからの画像返信用ポートの数
 
-		private SyncshooterDefs _syncshooterDefs;
-		private MultiCastClient _mcastClient;
-		private Dictionary<string, int> _mapIP_Port;
+		private SyncshooterDefs _syncshooterDefs = null;
+		private MultiCastClient _mcastClient = null;
+		private Dictionary<string, int> _mapIP_Port = null;
 
 		public NewSyncShooter()
 		{
@@ -56,12 +57,86 @@ namespace NewSyncShooter
 		public IEnumerable<string> ConnectCamera()
 		{
 			// UDP マルチキャストを開く
-			_mcastClient = new MultiCastClient( MCAST_GRP, MCAST_PORT );
-			if ( _mcastClient.Open() == false ) {
-				return Array.Empty<string>();
+			if ( _mcastClient == null ) {
+				_mcastClient = new MultiCastClient( MCAST_GRP, MCAST_PORT );
+				if ( _mcastClient.Open() == false ) {
+					return Array.Empty<string>();
+				}
 			}
 			// 接続できたラズパイのアドレスを列挙する
-			return GetConnectedHostAddress();
+			return GetConnectedHostAddressUDP();
+			//return GetConnectedHostAddressTCP();
+		}
+
+		// 接続しているラズパイのアドレスを列挙する(UDP Protocol)（アドレスの第4オクテットの昇順でソート）
+		private IEnumerable<string> GetConnectedHostAddressUDP()
+		{
+			UdpClient udp = new UdpClient( SENDBACK_PORT );
+			udp.Client.ReceiveTimeout = 1000;
+
+			// マルチキャストに参加しているラズパイに"INQ"コマンドを送信
+			_mcastClient.SendCommand( "INQ" );
+			System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある
+
+			var mapIPvsPort = new Dictionary<string, int>();
+			try {
+				do {
+					// 任意IP Address, 任意のポートからデータを受信する 
+					IPEndPoint remoteEP = null;
+					byte[] rcvBytes = udp.Receive( ref remoteEP );
+					string rcvMsg = System.Text.Encoding.UTF8.GetString( rcvBytes );
+					if ( rcvMsg == "ACK" ) {
+						Console.Error.WriteLine( "送信元アドレス:{0}/ポート番号:{1}", remoteEP.Address.ToString(), remoteEP.Port );  // この送信元ポート番号は毎度変わる
+						mapIPvsPort[remoteEP.Address.ToString()] = remoteEP.Port;
+					}
+				} while ( udp.Available > 0 );
+			} catch ( Exception e ) {
+				System.Diagnostics.Debug.WriteLine( e.Message );
+				udp.Close();
+				return Array.Empty<string>();
+			}
+			udp.Close();
+
+			// アドレスの第4オクテットの昇順でソート
+			return mapIPvsPort.OrderBy( pair => {
+				int idx = pair.Key.LastIndexOf('.');
+				int adrs4th = int.Parse(pair.Key.Substring( idx  + 1 ));
+				return adrs4th;
+			} ).Select( pair => pair.Key )  // (結局はIPアドレスのみを残しポート番号は捨てる)
+											// SyncShooterDefsにある全IPアドレスリストにないものは除く
+			.Intersect( _syncshooterDefs.GetAllCameraIPAddress() );
+		}
+
+		// 接続しているラズパイのアドレスを列挙する(TCP Protocol)（アドレスの第4オクテットの昇順でソート）
+		public IEnumerable<string> GetConnectedHostAddressTCP()
+		{
+			// マルチキャストに参加しているラズパイに"INQ"コマンドを送信
+			_mcastClient.SendCommand( "INQ" );
+			System.Threading.Thread.Sleep( 1000 );
+
+			// "ACK"を返してきたカメラのIPアドレスを記録する
+			var ipAddressList = _syncshooterDefs.GetAllCameraIPAddress();
+			var connectedIpAddressList = new List<string>();
+			foreach ( var ipAddress in ipAddressList ) {
+				var socket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
+				socket.Connect( ipAddress, SENDBACK_PORT );
+				bool bConnected = socket.Connected;
+				//var result = socket.BeginConnect( ipAddress, SENDBACK_PORT, null, null );
+				//socket.ReceiveTimeout = 1000;
+				//bool bConnected = result.AsyncWaitHandle.WaitOne( 100, true );
+				if ( bConnected ) {
+					while ( socket.Available == 0 ) {
+					}
+					var rcvBytes = new byte[socket.Available];
+					socket.Receive( rcvBytes );
+					var rcvString = System.Text.Encoding.UTF8.GetString( rcvBytes );
+					if ( rcvString == "ACK" ) {
+						connectedIpAddressList.Add( ipAddress );
+					}
+					socket.Close();
+				}
+			}
+			return connectedIpAddressList;
 		}
 
 		/// <summary>
@@ -73,9 +148,9 @@ namespace NewSyncShooter
 		{
 			try {
 				TcpClient tcp = new TcpClient( ipAddress, SHOOTIMAGESERVER_PORT );
-				System.Net.Sockets.NetworkStream ns = tcp.GetStream();
-				ns.ReadTimeout = 10000;
-				ns.WriteTimeout = 10000;
+				NetworkStream ns = tcp.GetStream();
+				ns.ReadTimeout = 5000;
+				ns.WriteTimeout = 5000;
 
 				// get parameter コマンドを送信
 				string cmd = "PGT";
@@ -106,9 +181,9 @@ namespace NewSyncShooter
 		{
 			try {
 				TcpClient tcp = new TcpClient( ipAddress, SHOOTIMAGESERVER_PORT );
-				System.Net.Sockets.NetworkStream ns = tcp.GetStream();
-				ns.ReadTimeout = 10000;
-				ns.WriteTimeout = 10000;
+				NetworkStream ns = tcp.GetStream();
+				ns.ReadTimeout = 5000;
+				ns.WriteTimeout = 5000;
 
 				// set parameter コマンドを送信
 				string cmd = "PST";
@@ -146,7 +221,6 @@ namespace NewSyncShooter
 			System.Net.Sockets.NetworkStream ns = tcp.GetStream();
 			ns.ReadTimeout = 5000;
 			ns.WriteTimeout = 5000;
-			MemoryStream ms = new MemoryStream();
 
 			// get preview image コマンドを送信
 			string cmd = "PRV";
@@ -156,7 +230,11 @@ namespace NewSyncShooter
 			// データを受信
 			ulong sum = 0;
 			ulong bytes_to_read = 0;
+			MemoryStream ms = new MemoryStream();
 			do {
+				if ( tcp.Available == 0 ) {
+					continue;   // Retry
+				}
 				byte[] rcvBytes = new byte[tcp.Client.Available];
 				int resSize = 0;
 				try {
@@ -235,14 +313,22 @@ namespace NewSyncShooter
 		/// （先に SendCommandToGetFullImageInJpeg()で全ラズパイカメラに撮影命令を送信しておく ）
 		/// </summary>
 		/// <param name="ipAddress"></param>
+		/// <param name="portNo"></param>
 		/// <returns></returns>
-		public byte[] GetFullImageInJpeg( string ipAddress )
+		public byte[] GetFullImageInJpeg( string ipAddress, out int portNo )
 		{
-			TcpClient tcp = new TcpClient( ipAddress, SHOOTIMAGESERVER_PORT );
-			System.Net.Sockets.NetworkStream ns = tcp.GetStream();
+			// この関数はマルチスレッドで実行されるため、異なるIPアドレスでのデータ受信が
+			// 同じポートで重ならないようにする必要がある。
+			// そのため、IP Address の第4オクテットの数値に応じてポート番号を選択する。
+			int idx = ipAddress.LastIndexOf('.');
+			int adrs4th = int.Parse( ipAddress.Substring( idx  + 1 ) );
+			portNo = SHOOTIMAGESERVER_PORT + ( adrs4th % SHOOTIMAGESERVER_PORT_NUM );
+			System.Diagnostics.Debug.WriteLine( "{0}:{1}", ipAddress, portNo );
+
+			var tcp = new TcpClient( ipAddress, portNo );
+			var ns = tcp.GetStream();
 			ns.ReadTimeout = 5000;
 			ns.WriteTimeout = 5000;
-			MemoryStream ms = new MemoryStream();
 
 			// full image 取得コマンドを送信
 			string cmd = "IMG";
@@ -251,9 +337,13 @@ namespace NewSyncShooter
 
 			// データを受信
 			ulong sum = 0;
-			ulong bytes_to_read = 0;
+			ulong bytesToRead = 0;
+			MemoryStream ms = new MemoryStream();
 			do {
-				byte[] rcvBytes = new byte[tcp.Client.Available];
+				if ( tcp.Available == 0 ) {
+					continue;	// Retry
+				}
+				byte[] rcvBytes = new byte[tcp.Available];
 				int resSize;
 				try {
 					resSize = ns.Read( rcvBytes, 0, rcvBytes.Length );
@@ -269,17 +359,16 @@ namespace NewSyncShooter
 						throw e;
 					}
 				}
-				if ( resSize == 0 ) {
-					continue;
+				if ( resSize >= 4 ) {
+					if ( sum == 0 ) {
+						// 先頭の4バイトには、次に続くデータのサイズが書かれている
+						bytesToRead = ( (ulong) rcvBytes[0] ) | ( (ulong) rcvBytes[1] << 8 ) | ( (ulong) rcvBytes[2] << 16 ) | ( (ulong) rcvBytes[3] << 24 );
+					}
+					sum += (ulong) resSize;
+					ms.Write( rcvBytes, 0, resSize );
 				}
-				if ( sum == 0 ) {
-					// 先頭の4バイトには、次に続くデータのサイズが書かれている
-					bytes_to_read = ( (ulong) rcvBytes[0] ) | ( (ulong) rcvBytes[1] << 8 ) | ( (ulong) rcvBytes[2] << 16 ) | ( (ulong) rcvBytes[3] << 24 );
-				}
-				sum += (ulong) resSize;
-				ms.Write( rcvBytes, 0, resSize );
-			} while ( sum < bytes_to_read + 4 );
-			System.Diagnostics.Debug.WriteLine( "{0}: size = {1}", ipAddress, ( int) sum - 4 );
+			} while ( sum < bytesToRead + 4 );
+
 			ms.Close();
 			ns.Close();
 			tcp.Close();
@@ -298,84 +387,6 @@ namespace NewSyncShooter
 				_mcastClient = null;
 			}
 		}
-
-		// 接続しているラズパイのアドレスを列挙する（アドレスの第4オクテットの昇順でソート）
-		private IEnumerable<string> GetConnectedHostAddress()
-		{
-			UdpClient udp = new UdpClient( SENDBACK_PORT );
-			udp.Client.ReceiveTimeout = 1000;
-
-			// マルチキャストに参加しているラズパイに"INQ"コマンドを送信
-			_mcastClient.SendCommand( "INQ" );
-			System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある
-
-			var mapIPvsPort = new Dictionary<string, int>();
-			try {
-				do {
-					// 任意IP Address, 任意のポートからデータを受信する 
-					IPEndPoint remoteEP = null;
-					byte[] rcvBytes = udp.Receive( ref remoteEP );
-					string rcvMsg = System.Text.Encoding.UTF8.GetString( rcvBytes );
-					if ( rcvMsg == "ACK" ) {
-						Console.Error.WriteLine( "送信元アドレス:{0}/ポート番号:{1}", remoteEP.Address.ToString(), remoteEP.Port );  // この送信元ポート番号は毎度変わる
-						mapIPvsPort[remoteEP.Address.ToString()] = remoteEP.Port;
-					}
-				} while ( udp.Available > 0 );
-			} catch ( Exception e ) {
-				Console.Error.WriteLine( e.Message );
-				udp.Close();
-				return Array.Empty<string>();
-			}
-			udp.Close();
-
-			// アドレスの第4オクテットの昇順でソート
-			var connectedList = mapIPvsPort.OrderBy( pair =>
-			{
-				int idx = pair.Key.LastIndexOf('.');
-				int adrs4th = int.Parse(pair.Key.Substring( idx  + 1 ));
-				return adrs4th;
-			} ).Select( pair => pair.Key );
-
-			// SyncShooterDefsにある全IPアドレスリストにないものは除く
-			return connectedList.Intersect( _syncshooterDefs.GetAllCameraIPAddress() );
-		}
-
-		//public IEnumerable<string> GetConnectedHostAddress( IEnumerable<string> ipAddressList )
-		//{
-		//	// UDP マルチキャストを開く
-		//	_mcastClient = new MultiCastClient( MCAST_GRP, MCAST_PORT );
-		//	if ( _mcastClient.Open() == false ) {
-		//		return Array.Empty<string>();
-		//	}
-
-		//	// マルチキャストに参加しているラズパイに"INQ"コマンドを送信
-		//	_mcastClient.SendCommand( "INQ" );
-		//	System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある
-
-		//	// "ACK"を返してきたカメラのIPアドレスを記録する
-		//	List<string> connectedIpAddressList = new List<string>();
-		//	foreach ( var ipAddress in ipAddressList ) {
-		//		TcpClient tcp = new TcpClient( ipAddress, SENDBACK_PORT );
-		//		System.Net.Sockets.NetworkStream ns = tcp.GetStream();
-		//		ns.ReadTimeout = 10000;
-		//		ns.WriteTimeout = 10000;
-
-		//		// データを受信
-		//		while ( tcp.Client.Available == 0 ) {
-		//		}
-		//		byte[] rcvBytes = new byte[tcp.Client.Available];
-		//		ns.Read( rcvBytes, 0, tcp.Client.Available );
-		//		string rcvString = System.Text.Encoding.UTF8.GetString( rcvBytes );
-		//		tcp.Close();
-
-		//		if ( rcvString == "ACK" ) {
-		//			connectedIpAddressList.Add( ipAddress );
-		//		}
-		//	}
-
-		//	// SyncShooterDefsにある全IPアドレスリストにないものは除く
-		//	return connectedIpAddressList.Union( _syncshooterDefs.GetAllCameraIPAddress() );
-		//}
 
 	}
 }

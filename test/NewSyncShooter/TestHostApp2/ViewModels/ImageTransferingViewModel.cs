@@ -33,13 +33,15 @@ namespace TestHostApp2.ViewModels
 		public ImageTransferingViewModel()
 		{
 			CancelCommand = new DelegateCommand( CancelInteraction );
-			_tokenSource = new CancellationTokenSource();
+			//_tokenSource = new CancellationTokenSource();
 		}
 
 		~ImageTransferingViewModel()
 		{
 			//_tokenSource.Cancel();
-			_tokenSource.Dispose();
+			if ( _tokenSource != null ) {
+				_tokenSource.Dispose();
+			}
 		}
 
 		//private void OKInteraction()
@@ -61,16 +63,19 @@ namespace TestHostApp2.ViewModels
 			var notification = _notification as ImagTransferingNotification;
 			this.ProgressMaxValue.Value = notification.ConnectedIPAddressList.Count();
 			try {
+				// 撮影コマンドを全ラズパイカメラへ送信する
 				notification.SyncShooter.SendCommandToGetFullImageInJpeg();
 				this.ProgressValue.Value = 0;
+				this.Information.Value = string.Empty;
 				await Task.Factory.StartNew( () => {
 					int progressCount = 0;
 					notification.ConnectedIPAddressList.AsParallel().ForAll( ipAddress => {
+						//notification.ConnectedIPAddressList.ToList().ForEach( ipAddress => {
 						if ( token.IsCancellationRequested == false ) {
 							// 画像を撮影＆取得
-							byte[] data = notification.SyncShooter.GetFullImageInJpeg( ipAddress );
+							byte[] data = notification.SyncShooter.GetFullImageInJpeg( ipAddress, out int portNo );
 							if ( data.Length > 0 ) {
-								this.Information.Value = ipAddress + " received";
+								this.Information.Value = string.Format( "{0}:{1} received.", ipAddress, portNo );
 								// IP Address の第4オクテットのファイル名で保存する
 								int idx = ipAddress.LastIndexOf('.');
 								int adrs4th = int.Parse( ipAddress.Substring( idx  + 1 ) );
@@ -85,9 +90,11 @@ namespace TestHostApp2.ViewModels
 				} );
 			} catch ( OperationCanceledException ex ) {
 				System.Diagnostics.Debug.WriteLine( "Canceled: {0}", ex.Message );
+				_notification.Confirmed = false;
 			}
 			// メインスレッドに処理を戻して、ウインドウを閉じる処理を実行する
 			_mainContext.Post( _ => CloseWindowRequest.Raise( null ), null );
+			_notification.Confirmed = true;
 		}
 
 		public INotification Notification
@@ -101,7 +108,7 @@ namespace TestHostApp2.ViewModels
 				//this.PreviewingImage.Value = notification.Image;
 
 				_mainContext = SynchronizationContext.Current;
-				//_tokenSource = new CancellationTokenSource();
+				_tokenSource = new CancellationTokenSource();
 				Task tsk = Task.Run(() => TransferImageAsync(_tokenSource));
 			}
 		}

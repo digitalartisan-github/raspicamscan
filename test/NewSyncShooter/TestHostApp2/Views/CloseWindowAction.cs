@@ -9,7 +9,10 @@ namespace TestHostApp2.Views
 	{
 		protected override void Invoke( object parameter )
 		{
-			Window.GetWindow( AssociatedObject ).Close();
+			var win = Window.GetWindow( AssociatedObject );
+			if ( win != null ) {
+				win.Close();
+			}
 		}
 	}
 }
