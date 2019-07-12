@@ -8,18 +8,18 @@ namespace TestHostApp2.ViewModels
 	public class CameraConnectionViewModel : BindableBase, IInteractionRequestAware
 	{
 		public string SelectedItem { get; set; }
-		public DelegateCommand OkCommand { get; private set; }
+		public DelegateCommand OKCommand { get; private set; }
 
 		public CameraConnectionViewModel()
 		{
-			OkCommand = new DelegateCommand( CancelInteraction );
+			OKCommand = new DelegateCommand( AcceptSelectedItem );
 		}
 
-		private void CancelInteraction()
-		{
-			_notification.Confirmed = false;
-			FinishInteraction?.Invoke();
-		}
+		//private void CancelInteraction()
+		//{
+		//	_notification.Confirmed = false;
+		//	FinishInteraction?.Invoke();
+		//}
 
 		private void AcceptSelectedItem()
 		{

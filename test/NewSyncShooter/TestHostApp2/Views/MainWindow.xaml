@@ -58,6 +58,14 @@
 			</prism:PopupWindowAction>
 		</prism:InteractionRequestTrigger>
 
+		<prism:InteractionRequestTrigger SourceObject="{Binding CameraSettingRequest}">
+			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+				<prism:PopupWindowAction.WindowContent>
+					<views:CameraSettingView />
+				</prism:PopupWindowAction.WindowContent>
+			</prism:PopupWindowAction>
+		</prism:InteractionRequestTrigger>
+
 		<prism:InteractionRequestTrigger SourceObject="{Binding CameraCapturingRequest}">
 			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
 				<prism:PopupWindowAction.WindowContent>
@@ -122,7 +130,7 @@
 				<RibbonGroup Header="カメラ">
 					<RibbonButton Label="検索" LargeImageSource="Images/camera_identification_60px.png" Command="{Binding CameraConnectionCommand}"/>
 					<RibbonToggleButton Label="プレビュー" LargeImageSource="Images/screenshot_60px.png" IsChecked="{Binding IsCameraPreviewing.Value}" IsEnabled="{Binding IsCameraConnected.Value}"/>
-					<!--<RibbonButton Label="設定" LargeImageSource="Images/camera_enhance_60px.png" Command="{Binding CameraSettingCommand}"/>-->
+					<RibbonButton Label="設定" LargeImageSource="Images/camera_enhance_60px.png" Command="{Binding CameraSettingCommand}"/>
 					<RibbonButton Label="撮影" LargeImageSource="Images/multiple_cameras_60px.png" Command="{Binding CameraCapturingCommand}"/>
 					<RibbonButton Label="停止" LargeImageSource="Images/no_camera_60px.png" Command="{Binding CameraStopCommand}"/>
 					<RibbonButton Label="再起動" LargeImageSource="Images/switch_camera_60px.png" Command="{Binding CameraRebootCommand}"/>

@@ -51,6 +51,7 @@ namespace TestHostApp2.ViewModels
 		public InteractionRequest<INotification> NewProjectRequest { get; } = new InteractionRequest<INotification>();
 		public InteractionRequest<INotification> OpenFolderRequest { get; } = new InteractionRequest<INotification>();
 		public InteractionRequest<INotification> CameraConnectionRequest { get; } = new InteractionRequest<INotification>();
+		public InteractionRequest<INotification> CameraSettingRequest { get; } = new InteractionRequest<INotification>();
 		public InteractionRequest<INotification> CameraCapturingRequest { get; } = new InteractionRequest<INotification>();
 		public InteractionRequest<INotification> ImageTransferingRequest { get; } = new InteractionRequest<INotification>();
 		public InteractionRequest<INotification> NetworkSettingRequest { get; } = new InteractionRequest<INotification>();
@@ -160,6 +161,7 @@ namespace TestHostApp2.ViewModels
 			OpenFolderCommand.Subscribe( RaiseOpenFolderCommand );
 			CameraConnectionCommand = new ReactiveCommand();
 			CameraConnectionCommand.Subscribe( RaiseCameraConnection );
+			//CameraSettingCommand = new ReactiveCommand();
 			CameraSettingCommand = this.IsCameraConnected.ToReactiveCommand();
 			CameraSettingCommand.Subscribe( RaiseCameraSetting );
 			CameraCapturingCommand = this.IsCameraConnected.CombineLatest( this.ProjectName, ( c, p ) => c && !string.IsNullOrEmpty( p ) ).ToReactiveCommand();
@@ -303,13 +305,49 @@ namespace TestHostApp2.ViewModels
 		/// </summary>
 		void RaiseCameraSetting()
 		{
+			// プレビューを停止
 			IsCameraPreviewing.Value = false;
-			// TODO: 仕様を確認すること
-			ConnectedIPAddressList.ToList().ForEach( adrs => {
-				var param = _newSyncShooter.GetCameraParam( adrs );
-				param.Orientation = 1;
-				_newSyncShooter.SetCameraParam( adrs, param );
-			} );
+
+#if true
+			// カメラビュー上で選択されているアドレスを取得する
+			var cameraItems = new List<CameraSubTreeItem>();
+			foreach ( var item in this.CameraTree.First().Items.SourceCollection ) {
+				var cameraItem = item as CameraSubTreeItem;
+				if ( cameraItem.IsSelected ) {
+					cameraItems.Add( cameraItem );
+				}
+			}
+			if ( cameraItems.Count == 0 ) {
+				return;
+			}
+			var selectedIPAddress = cameraItems.First()._ipAddress;
+			// そのアドレスのカメラのカメラパラメータを取得する
+			var selectedCameraParam = _newSyncShooter.GetCameraParam( selectedIPAddress );
+			if ( selectedCameraParam == null ) {
+				return;
+			}
+			selectedCameraParam.Serialize( selectedIPAddress + ".json" );
+#else
+			var selectedIPAddress = "192.168.55.11";
+			var selectedCameraParam = new NewSyncShooter.CameraParam();
+#endif
+			var notification = new CameraSettingNotification()
+			{
+				Title = "カメラパラメータ",
+				IPAddress = selectedIPAddress,
+				CameraParameter = selectedCameraParam,
+			};
+			CameraSettingRequest.Raise( notification );
+			if ( notification.Confirmed ) {
+				var param = notification.CameraParameter;
+				if ( notification.IsApplyToAllCamera ) {
+					// 全てアドレスに対して設定
+					this.ConnectedIPAddressList.AsParallel().ForAll( adrs => _newSyncShooter.SetCameraParam( adrs, param ) );
+				} else {
+					// 選択中のアドレスのみに対して設定
+					_newSyncShooter.SetCameraParam( selectedIPAddress, param );
+				}
+			}
 		}
 
 		/// <summary>
@@ -329,7 +367,7 @@ namespace TestHostApp2.ViewModels
 				// 撮影フォルダ名：
 				// プロジェクトのフォルダ名＋現在の年月日時分秒＋撮影番号からなるフォルダ名のフォルダに画像を保存する
 				string sTargetName = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-				if (! string.IsNullOrEmpty( notification.CapturingName )) {
+				if ( !string.IsNullOrEmpty( notification.CapturingName ) ) {
 					sTargetName += string.Format( "({0})", notification.CapturingName );
 				}
 				string sTargetDir = Path.Combine( this.ProjectFolderPath.Value, sTargetName );
@@ -367,7 +405,7 @@ namespace TestHostApp2.ViewModels
 				// 「ファイルビュー」表示を更新
 				FileTree.Clear();
 				FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
-				
+
 			} catch ( Exception e ) {
 				OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
 			}
@@ -585,7 +623,7 @@ namespace TestHostApp2.ViewModels
 			}
 		}
 
-	/// <summary>
+		/// <summary>
 		/// ファイルビューのコンテキストメニュー　[フォルダを削除]
 		/// </summary>
 		void RaiseFileViewDeleteFolderCommand()
@@ -624,7 +662,7 @@ namespace TestHostApp2.ViewModels
 					IsCameraPreviewing.Value = false;
 					try {
 						string sIPAddress = treeItem._ipAddress;
-						byte[] data = _newSyncShooter.GetPreviewImage(sIPAddress);
+						byte[] data = _newSyncShooter.GetPreviewImage( sIPAddress );
 						if ( data.Length > 0 ) {
 							ShowPreviewImage( data );
 						}
@@ -636,3 +674,4 @@ namespace TestHostApp2.ViewModels
 		}
 	}
 }
+

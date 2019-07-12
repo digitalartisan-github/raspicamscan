@@ -3,7 +3,7 @@
 						xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 						xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
 						xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-						xmlns:prism="http://prismlibrary.com/"             
+						xmlns:prism="http://prismlibrary.com/"
 						prism:ViewModelLocator.AutoWireViewModel="True"
 						xmlns:local="clr-namespace:TestHostApp2.Views"
 						mc:Ignorable="d" 
@@ -22,7 +22,7 @@
 		<TextBox Grid.Row="0" Grid.Column="1" Width="250" Height="24" HorizontalAlignment="Left" Margin="4" Text="{Binding CapturingName.Value, UpdateSourceTrigger=PropertyChanged}"/>
 		<Label Grid.Row="1" Grid.Column="1" Content="撮影フォルダ名の最後に ( )付きで追加されます。"/>
 		<StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="4">
-			<Button Content="撮影" Width="60" Height="24" Margin="4" IsDefault="True" Command="{Binding OkCommand}"/>
+			<Button Content="撮影" Width="60" Height="24" Margin="4" IsDefault="True" Command="{Binding OKCommand}"/>
 			<Button Content="キャンセル" Width="60" Height="24" Margin="4" Command="{Binding CancelCommand}"/>
 		</StackPanel>
 	</Grid>

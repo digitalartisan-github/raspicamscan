@@ -14,8 +14,8 @@ namespace NewSyncShooter
 		private static readonly string MCAST_GRP				= "239.2.1.1";
 		private static readonly int MCAST_PORT					= 27781;	// マルチキャスト送信ポート
 		private static readonly int SENDBACK_PORT				= 27782;	// マルチキャストでラズパイからの返信ポート
-		private static readonly int SHOOTIMAGESERVER_PORT       = 27783;	// ラズパイからの画像返信用ポート
-		private static readonly int SHOOTIMAGESERVER_PORT_NUM   = 32;		// ラズパイからの画像返信用ポートの数
+		private static readonly int SHOOTIMAGESERVER_PORT		= 27783;	// ラズパイからの画像返信用ポート
+		private static readonly int SHOOTIMAGESERVER_PORT_NUM	= 32;		// ラズパイからの画像返信用ポートの数
 
 		private SyncshooterDefs _syncshooterDefs = null;
 		private MultiCastClient _mcastClient = null;
@@ -117,6 +117,16 @@ namespace NewSyncShooter
 			// "ACK"を返してきたカメラのIPアドレスを記録する
 			var ipAddressList = _syncshooterDefs.GetAllCameraIPAddress();
 			var connectedIpAddressList = new List<string>();
+#if true
+			var tcpSocketServer = new TcpSocketServer(SENDBACK_PORT);
+			tcpSocketServer.Run();
+			//var ipEndPoint = new IPEndPoint( IPAddress.Loopback, SENDBACK_PORT );
+			//var socket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
+			//socket.SetSocketOption( SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true );
+			//socket.Bind( ipEndPoint );
+			//socket.Listen( 10 );
+
+#else
 			foreach ( var ipAddress in ipAddressList ) {
 				var socket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
 				socket.Connect( ipAddress, SENDBACK_PORT );
@@ -136,6 +146,7 @@ namespace NewSyncShooter
 					socket.Close();
 				}
 			}
+#endif
 			return connectedIpAddressList;
 		}
 
@@ -202,8 +213,8 @@ namespace NewSyncShooter
 
 				// parameter を送信
 				var jsonText = param.EncodeToJsonText();
-				cmdBytes = System.Text.Encoding.UTF8.GetBytes( jsonText );
-				ns.Write( cmdBytes, 0, cmdBytes.Length );
+				var sendString = System.Text.Encoding.UTF8.GetBytes( jsonText );
+				ns.Write( sendString, 0, sendString.Length );
 
 			} catch ( Exception e ) {
 				Console.Error.WriteLine( e.Message );

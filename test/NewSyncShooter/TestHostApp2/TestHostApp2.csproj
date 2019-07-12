@@ -62,6 +62,7 @@
     </ApplicationDefinition>
     <Compile Include="Models\Project.cs" />
     <Compile Include="Notifications\CameraCapturingNotification.cs" />
+    <Compile Include="Notifications\CameraSettingNotification.cs" />
     <Compile Include="Notifications\ClosingNotificaton.cs" />
     <Compile Include="Notifications\ImagTransferingNotification.cs" />
     <Compile Include="Notifications\MessageBoxNotification.cs" />
@@ -69,6 +70,7 @@
     <Compile Include="Notifications\NewProjectNotification.cs" />
     <Compile Include="Notifications\ThreeDBuildingNotification.cs" />
     <Compile Include="ViewModels\CameraCapturingViewModel.cs" />
+    <Compile Include="ViewModels\CameraSettingViewModel.cs" />
     <Compile Include="ViewModels\CameraTreeItem.cs" />
     <Compile Include="ViewModels\FileTreeItem.cs" />
     <Compile Include="ViewModels\ImageTransferingViewModel.cs" />
@@ -78,6 +80,9 @@
     <Compile Include="ViewModels\TreeViewItemViewModel.cs" />
     <Compile Include="Views\CameraCapturingView.xaml.cs">
       <DependentUpon>CameraCapturingView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\CameraSettingView.xaml.cs">
+      <DependentUpon>CameraSettingView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\CloseWindowAction.cs" />
     <Compile Include="Views\ImageTransferingView.xaml.cs">
@@ -102,6 +107,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\CameraCapturingView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\CameraSettingView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

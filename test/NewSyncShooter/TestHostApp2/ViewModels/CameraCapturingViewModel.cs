@@ -16,21 +16,21 @@ namespace TestHostApp2.ViewModels
 
 		public ReactiveProperty<string> CapturingName { get; } = new ReactiveProperty<string>( string.Empty );
 
-		public ReactiveCommand OkCommand { get; }
-		public ReactiveCommand CancelCommand { get; }
+		public ReactiveCommand OKCommand { get; } = new ReactiveCommand();
+		public ReactiveCommand CancelCommand { get; } = new ReactiveCommand();
 
+		/// <summary>
+		/// コンストラクタ
+		/// </summary>
 		public CameraCapturingViewModel()
 		{
-			//OkCommand = CapturingName.Select( s => !string.IsNullOrEmpty( s ) ).ToReactiveCommand();
-			OkCommand = new ReactiveCommand();
-			OkCommand.Subscribe( OKInteraction );
-			CancelCommand = new ReactiveCommand();
+			OKCommand.Subscribe( OKInteraction );
 			CancelCommand.Subscribe( CancelInteraction );
 		}
 
 		private void OKInteraction()
 		{
-			CameraCapturingNotification notification = _notification as CameraCapturingNotification;
+			var notification = _notification as CameraCapturingNotification;
 			notification.CapturingName = this.CapturingName.Value;
 			_notification.Confirmed = true;
 			FinishInteraction?.Invoke();
@@ -47,7 +47,7 @@ namespace TestHostApp2.ViewModels
 			get { return _notification; }
 			set {
 				SetProperty( ref _notification, (IConfirmation) value );
-				CameraCapturingNotification notification = _notification as CameraCapturingNotification;
+				var notification = _notification as CameraCapturingNotification;
 				this.CapturingName.Value = notification.CapturingName;
 			}
 		}
