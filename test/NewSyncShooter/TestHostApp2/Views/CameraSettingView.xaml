@@ -31,7 +31,7 @@
 				<RadioButton Grid.Row="0" Grid.Column="0" Content="プリセット" Margin="4" IsChecked="{Binding IsAwbPreset.Value}"/>
 				<ComboBox Grid.Row="0" Grid.Column="1"
 									ItemsSource="{Binding AwbPresetItems}" DisplayMemberPath="Name" SelectedValuePath="Value"
-									SelectedValue="{Binding AwbPresetValue.Value}"/>
+									SelectedValue="{Binding AwbPresetValue.Value}" IsEnabled="{Binding IsAwbPreset.Value}"/>
 				<RadioButton Grid.Row="1" Grid.Column="0" Content="マニュアル" Margin="4" IsChecked="{Binding IsAwbManual.Value}" />
 				<DockPanel Grid.Row="2" Grid.Column="1" IsEnabled="{Binding IsAwbManual.Value}">
 					<Label DockPanel.Dock="Left" Content="{Binding WbOffsetMin.Value, Mode=OneWay}" Width="auto" HorizontalAlignment="Left" />

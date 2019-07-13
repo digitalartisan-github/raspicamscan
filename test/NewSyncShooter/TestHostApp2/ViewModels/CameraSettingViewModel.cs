@@ -85,7 +85,7 @@ namespace TestHostApp2.ViewModels
 			this.IsAwbManual = this.CameraParameter.Select( p => p.awb_mode == "off" ).ToReactiveProperty();
 			this.IsAwbManual.Subscribe( b => {
 				if ( b ) {
-					this.CameraParameter.Value.awb_mode = "manual";
+					this.CameraParameter.Value.awb_mode = "off";
 				}
 			} );
 

@@ -174,9 +174,11 @@ namespace NewSyncShooter
 				byte[] rcvBytes = new byte[tcp.Client.Available];
 				ns.Read( rcvBytes, 0, tcp.Client.Available );
 				string rcvString = System.Text.Encoding.UTF8.GetString( rcvBytes );
-				tcp.Close();
 
+				ns.Close();
+				tcp.Close();
 				return CameraParam.DecodeFromJsonText( rcvString );
+
 			} catch ( Exception e ) {
 				Console.Error.WriteLine( e.Message );
 				return null;
@@ -207,14 +209,22 @@ namespace NewSyncShooter
 				byte[] rcvBytes = new byte[tcp.Client.Available];
 				ns.Read( rcvBytes, 0, tcp.Client.Available );
 				string rcvString = System.Text.Encoding.UTF8.GetString( rcvBytes );
-				if ( rcvString != "ACK" ) {
-					return;
+				if ( rcvString == "ACK" ) {
+					// parameter を送信
+					var jsonText = param.EncodeToJsonText();
+					var sendBytes = System.Text.Encoding.UTF8.GetBytes( jsonText );
+					// 送信するデータサイズを送る (little endian)
+					byte[] sizeBytes = new byte[4];
+					sizeBytes[0] = (byte) ( sendBytes.Length & 0xff );
+					sizeBytes[1] = (byte) ( ( sendBytes.Length & 0xff00 ) >> 8 );
+					sizeBytes[2] = (byte) ( ( sendBytes.Length & 0xff0000 ) >> 16 );
+					sizeBytes[3] = (byte) ( ( sendBytes.Length & 0xff000000 ) >> 24 );
+					ns.Write( sizeBytes, 0, sizeBytes.Length );
+					// パラメータを送信する
+					ns.Write( sendBytes, 0, sendBytes.Length );
 				}
-
-				// parameter を送信
-				var jsonText = param.EncodeToJsonText();
-				var sendString = System.Text.Encoding.UTF8.GetBytes( jsonText );
-				ns.Write( sendString, 0, sendString.Length );
+				ns.Close();
+				tcp.Close();
 
 			} catch ( Exception e ) {
 				Console.Error.WriteLine( e.Message );
