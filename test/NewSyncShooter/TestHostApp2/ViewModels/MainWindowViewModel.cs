@@ -308,46 +308,55 @@ namespace TestHostApp2.ViewModels
 			// プレビューを停止
 			IsCameraPreviewing.Value = false;
 
-#if true
-			// カメラビュー上で選択されているアドレスを取得する
-			var cameraItems = new List<CameraSubTreeItem>();
-			foreach ( var item in this.CameraTree.First().Items.SourceCollection ) {
-				var cameraItem = item as CameraSubTreeItem;
-				if ( cameraItem.IsSelected ) {
-					cameraItems.Add( cameraItem );
-				}
-			}
-			if ( cameraItems.Count == 0 ) {
+			if ( this.CameraTree.First().Items.Count == 0 ) {
 				return;
 			}
-			var selectedIPAddress = cameraItems.First()._ipAddress;
+			// カメラビュー上で選択されているアドレスを取得する
+			CameraSubTreeItem selectedItem = this.CameraTree.First().Items[0] as CameraSubTreeItem;
+			for ( int i = 0; i < this.CameraTree.First().Items.Count; ++i ) {
+				var item = this.CameraTree.First().Items[i] as CameraSubTreeItem;
+				if ( item.IsSelected ) {
+					selectedItem = item;
+					break;
+				}
+			}
+			//var cameraItems = new List<CameraSubTreeItem>();
+			//foreach ( var item in this.CameraTree.First().Items.SourceCollection ) {
+			//	var cameraItem = item as CameraSubTreeItem;
+			//	if ( cameraItem.IsSelected ) {
+			//		cameraItems.Add( cameraItem );
+			//	}
+			//}
+			//if ( cameraItems.Count == 0 ) {
+			//	return;
+			//}
+			var selectedIPAddress = selectedItem._ipAddress;
 			// そのアドレスのカメラのカメラパラメータを取得する
 			var selectedCameraParam = _newSyncShooter.GetCameraParam( selectedIPAddress );
 			if ( selectedCameraParam == null ) {
 				return;
 			}
 			selectedCameraParam.Serialize( selectedIPAddress + ".json" );
-#else
-			var selectedIPAddress = "192.168.55.11";
-			var selectedCameraParam = new NewSyncShooter.CameraParam();
-#endif
+
 			var notification = new CameraSettingNotification()
 			{
 				Title = "カメラパラメータ",
 				IPAddress = selectedIPAddress,
 				CameraParameter = selectedCameraParam,
-			};
+				ApplyOne = param => _newSyncShooter.SetCameraParam( selectedIPAddress, param ),
+				ApplyAll = param => this.ConnectedIPAddressList.AsParallel().ForAll( adrs => _newSyncShooter.SetCameraParam( adrs, param ) ),
+		};
 			CameraSettingRequest.Raise( notification );
-			if ( notification.Confirmed ) {
-				var param = notification.CameraParameter;
-				if ( notification.IsApplyToAllCamera ) {
-					// 全てアドレスに対して設定
-					this.ConnectedIPAddressList.AsParallel().ForAll( adrs => _newSyncShooter.SetCameraParam( adrs, param ) );
-				} else {
-					// 選択中のアドレスのみに対して設定
-					_newSyncShooter.SetCameraParam( selectedIPAddress, param );
-				}
-			}
+			//if ( notification.Confirmed ) {
+			//	var param = notification.CameraParameter;
+			//	if ( notification.IsApplyToAllCamera ) {
+			//		// 全てアドレスに対して設定
+			//		this.ConnectedIPAddressList.AsParallel().ForAll( adrs => _newSyncShooter.SetCameraParam( adrs, param ) );
+			//	} else {
+			//		// 選択中のアドレスのみに対して設定
+			//		_newSyncShooter.SetCameraParam( selectedIPAddress, param );
+			//	}
+			//}
 		}
 
 		/// <summary>

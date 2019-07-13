@@ -62,36 +62,36 @@ namespace TestHostApp2.ViewModels
 			CancellationToken token = tokenSource.Token;
 			var notification = _notification as ImagTransferingNotification;
 			this.ProgressMaxValue.Value = notification.ConnectedIPAddressList.Count();
-			try {
 				// 撮影コマンドを全ラズパイカメラへ送信する
 				notification.SyncShooter.SendCommandToGetFullImageInJpeg();
 				this.ProgressValue.Value = 0;
 				this.Information.Value = string.Empty;
 				await Task.Factory.StartNew( () => {
 					int progressCount = 0;
-					notification.ConnectedIPAddressList.AsParallel().ForAll( ipAddress => {
-						//notification.ConnectedIPAddressList.ToList().ForEach( ipAddress => {
-						if ( token.IsCancellationRequested == false ) {
+					try {
+						//object o = new object();
+						notification.ConnectedIPAddressList.AsParallel().WithCancellation( token ).ForAll( ipAddress => {
 							// 画像を撮影＆取得
 							byte[] data = notification.SyncShooter.GetFullImageInJpeg( ipAddress, out int portNo );
 							if ( data.Length > 0 ) {
-								this.Information.Value = string.Format( "{0}:{1} received.", ipAddress, portNo );
 								// IP Address の第4オクテットのファイル名で保存する
 								int idx = ipAddress.LastIndexOf('.');
 								int adrs4th = int.Parse( ipAddress.Substring( idx  + 1 ) );
 								String path = Path.Combine( notification.TargetDir, string.Format( "{0}.jpg", adrs4th ) );
-								using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
+								using ( var fs = new FileStream( path, FileMode.Create, FileAccess.Write ) ) {
 									fs.Write( data, 0, data.Length );
 								}
-								this.ProgressValue.Value = ++progressCount;
+								//lock ( o ) {
+									this.Information.Value = string.Format( "{0}:{1} received.", ipAddress, portNo );
+									this.ProgressValue.Value = ++progressCount;
+								//}
 							}
-						}
-					} );
+						} );
+					} catch ( OperationCanceledException ex ) {
+						System.Diagnostics.Debug.WriteLine( ex.Message );
+						_notification.Confirmed = false;
+					}
 				} );
-			} catch ( OperationCanceledException ex ) {
-				System.Diagnostics.Debug.WriteLine( "Canceled: {0}", ex.Message );
-				_notification.Confirmed = false;
-			}
 			// メインスレッドに処理を戻して、ウインドウを閉じる処理を実行する
 			_mainContext.Post( _ => CloseWindowRequest.Raise( null ), null );
 			_notification.Confirmed = true;

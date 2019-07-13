@@ -259,5 +259,8 @@
   <ItemGroup>
     <Resource Include="Views\Images\user_folder_100px.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Views\Images\settings_60px.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

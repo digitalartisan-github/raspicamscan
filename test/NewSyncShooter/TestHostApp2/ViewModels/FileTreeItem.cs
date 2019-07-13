@@ -46,7 +46,7 @@ namespace TestHostApp2.ViewModels
 				Margin = new Thickness( 0, 0, 4, 0 )
 			} );
 			if ( _Directory != null ) {
-				sp.Children.Add( new TextBlock() { Text = _Directory.Name } );
+				sp.Children.Add( new TextBlock() { Text = _Directory.Name, FontWeight = FontWeights.Bold } );
 			}
 			return sp;
 		}

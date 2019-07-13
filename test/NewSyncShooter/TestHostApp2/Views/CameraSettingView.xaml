@@ -104,10 +104,10 @@
 		</GroupBox>
 
 		<DockPanel Margin="8">
-			<Button DockPanel.Dock="Left" Width="100" Margin="4" Content="全てのカメラに適用" Command="{Binding ApplyToAllCameraCommand}" />
+			<Button DockPanel.Dock="Left" Width="100" Margin="4" Content="全てのカメラに適用" Command="{Binding ApplyAllCommand}" />
 			<StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right" Orientation="Horizontal">
-				<Button Width="70" Margin="4" HorizontalAlignment="Left" Content="適用" IsDefault="True" Command="{Binding OKCommand}"/>
-				<Button Width="70" Margin="4" HorizontalAlignment="Left" Content="閉じる" Command="{Binding CancelCommand}" />
+				<Button Width="70" Margin="4" HorizontalAlignment="Left" Content="適用" IsDefault="True" Command="{Binding ApplyOneCommand}"/>
+				<Button Width="70" Margin="4" HorizontalAlignment="Left" Content="閉じる" Command="{Binding CloseCommand}" />
 			</StackPanel>
 		</DockPanel>
 

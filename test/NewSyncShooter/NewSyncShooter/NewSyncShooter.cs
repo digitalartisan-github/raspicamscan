@@ -348,8 +348,8 @@ namespace NewSyncShooter
 
 			var tcp = new TcpClient( ipAddress, portNo );
 			var ns = tcp.GetStream();
-			ns.ReadTimeout = 5000;
-			ns.WriteTimeout = 5000;
+			ns.ReadTimeout = 10000;
+			ns.WriteTimeout = 10000;
 
 			// full image 取得コマンドを送信
 			string cmd = "IMG";

@@ -43,9 +43,9 @@ namespace TestHostApp2.ViewModels
 		public ReactiveProperty<bool> IsAwbPreset { get; }
 		public ReactiveProperty<bool> IsAwbManual { get; }
 		public ReactiveProperty<int> WbGreenIntValue { get; }
-		public ReactiveProperty<string> WbGreenTextValue { get; }
+		public ReactiveProperty<string> WbGreenTextValue { get; } = new ReactiveProperty<string>();
 		public ReactiveProperty<int> WbRedIntValue { get; }
-		public ReactiveProperty<string> WbRedTextValue { get; }
+		public ReactiveProperty<string> WbRedTextValue { get; } = new ReactiveProperty<string>();
 		public ReactiveProperty<int> Brightness { get; }
 		public ReactiveProperty<bool> IsShutterSpeedAuto { get; }
 		public ReactiveProperty<bool> IsShutterSpeedManual { get; }
@@ -55,9 +55,9 @@ namespace TestHostApp2.ViewModels
 		#endregion
 
 		#region Commands
-		public ReactiveCommand ApplyToAllCameraCommand { get; } = new ReactiveCommand();
-		public ReactiveCommand OKCommand { get; } = new ReactiveCommand();
-		public ReactiveCommand CancelCommand { get; } = new ReactiveCommand();
+		public ReactiveCommand ApplyAllCommand { get; } = new ReactiveCommand();
+		public ReactiveCommand ApplyOneCommand { get; } = new ReactiveCommand();
+		public ReactiveCommand CloseCommand { get; } = new ReactiveCommand();
 		#endregion
 
 		/// <summary>
@@ -92,22 +92,26 @@ namespace TestHostApp2.ViewModels
 			this.WbGreenIntValue = this.CameraParameter.Select( p => (int) ( p.wb_gb * 100.0 ) ).ToReactiveProperty();
 			this.WbGreenIntValue.Subscribe( v => {
 				this.CameraParameter.Value.wb_gb = (double) v * 0.01;
+				this.WbGreenTextValue.Value = string.Format( "{0:0.00}", this.CameraParameter.Value.wb_gb );
 			} );
 			this.WbGreenTextValue = this.CameraParameter.Select( p => string.Format( "{0:0.00}", p.wb_gb ) ).ToReactiveProperty();
 			this.WbGreenTextValue.Subscribe( v => {
 				if ( Double.TryParse( v, out double d ) ) {
 					this.CameraParameter.Value.wb_gb = d;
+					this.WbGreenIntValue.Value = (int) ( d * 100.0 );
 				}
 			} );
 
 			this.WbRedIntValue = this.CameraParameter.Select( p => (int) ( p.wb_rg * 100.0 ) ).ToReactiveProperty();
 			this.WbRedIntValue.Subscribe( v => {
 				this.CameraParameter.Value.wb_rg = (double) v * 0.01;
+				this.WbRedTextValue.Value = string.Format( "{0:0.00}", this.CameraParameter.Value.wb_rg );
 			} );
 			this.WbRedTextValue = this.CameraParameter.Select( p => string.Format( "{0:0.00}", p.wb_rg ) ).ToReactiveProperty();
 			this.WbRedTextValue.Subscribe( v => {
 				if ( Double.TryParse( v, out double d ) ) {
 					this.CameraParameter.Value.wb_rg = d;
+					this.WbRedIntValue.Value = (int) ( d * 100.0 );
 				}
 			} );
 
@@ -126,30 +130,34 @@ namespace TestHostApp2.ViewModels
 			this.WbOffsetMin.Value = CameraParam.WbOffsetMin.ToString( "0.0" );
 			this.WbOffsetMax.Value = CameraParam.WbOffsetMax.ToString( "0.0" );
 
-			ApplyToAllCameraCommand.Subscribe( ApplyToAllCameraInteraction );
-			OKCommand.Subscribe( OKInteraction );
-			CancelCommand.Subscribe( CancelInteraction );
+			ApplyAllCommand.Subscribe( ApplyAllInteraction );
+			ApplyOneCommand.Subscribe( ApplyOneInteraction );
+			CloseCommand.Subscribe( CloseInteraction );
 		}
 
-		private void ApplyToAllCameraInteraction()
+		private void ApplyAllInteraction()
 		{
 			var notification = _notification as CameraSettingNotification;
 			notification.IsApplyToAllCamera = true;
 			notification.CameraParameter = this.CameraParameter.Value;
-			_notification.Confirmed = true;
-			FinishInteraction?.Invoke();
+			notification.ApplyAll( this.CameraParameter.Value );
+
+			//_notification.Confirmed = true;
+			//FinishInteraction?.Invoke();
 		}
 
-		private void OKInteraction()
+		private void ApplyOneInteraction()
 		{
 			var notification = _notification as CameraSettingNotification;
 			notification.IsApplyToAllCamera = false;
 			notification.CameraParameter = this.CameraParameter.Value;
-			_notification.Confirmed = true;
-			FinishInteraction?.Invoke();
+			notification.ApplyOne( this.CameraParameter.Value );
+
+			//_notification.Confirmed = true;
+			//FinishInteraction?.Invoke();
 		}
 
-		private void CancelInteraction()
+		private void CloseInteraction()
 		{
 			_notification.Confirmed = false;
 			FinishInteraction?.Invoke();
