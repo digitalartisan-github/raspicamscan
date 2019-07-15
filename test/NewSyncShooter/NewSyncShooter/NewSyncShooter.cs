@@ -117,36 +117,43 @@ namespace NewSyncShooter
 			// "ACK"を返してきたカメラのIPアドレスを記録する
 			var ipAddressList = _syncshooterDefs.GetAllCameraIPAddress();
 			var connectedIpAddressList = new List<string>();
-#if true
-			var tcpSocketServer = new TcpSocketServer(SENDBACK_PORT);
-			tcpSocketServer.Run();
-			//var ipEndPoint = new IPEndPoint( IPAddress.Loopback, SENDBACK_PORT );
-			//var socket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
-			//socket.SetSocketOption( SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true );
-			//socket.Bind( ipEndPoint );
-			//socket.Listen( 10 );
 
-#else
-			foreach ( var ipAddress in ipAddressList ) {
-				var socket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
-				socket.Connect( ipAddress, SENDBACK_PORT );
-				bool bConnected = socket.Connected;
-				//var result = socket.BeginConnect( ipAddress, SENDBACK_PORT, null, null );
-				//socket.ReceiveTimeout = 1000;
-				//bool bConnected = result.AsyncWaitHandle.WaitOne( 100, true );
-				if ( bConnected ) {
-					while ( socket.Available == 0 ) {
-					}
-					var rcvBytes = new byte[socket.Available];
-					socket.Receive( rcvBytes );
-					var rcvString = System.Text.Encoding.UTF8.GetString( rcvBytes );
-					if ( rcvString == "ACK" ) {
-						connectedIpAddressList.Add( ipAddress );
-					}
-					socket.Close();
-				}
-			}
-#endif
+			////IPv4の全てのIPアドレスをListenする
+			//TcpListener listener = new TcpListener(IPAddress.Any, SENDBACK_PORT);
+			//listener.Start();
+			//System.Net.Sockets.TcpClient client = listener.AcceptTcpClient();
+			//Console.WriteLine( "IPアドレス:{0} ポート番号:{1})。",
+			//	( (System.Net.IPEndPoint) client.Client.LocalEndPoint ).Address,
+			//	( (System.Net.IPEndPoint) client.Client.LocalEndPoint ).Port );
+
+			//var tcpSocketServer = new TcpSocketServer(SENDBACK_PORT);
+			//tcpSocketServer.Run();
+			var ipEndPoint = new IPEndPoint( IPAddress.Loopback, SENDBACK_PORT );
+			var socket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
+			socket.SetSocketOption( SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true );
+			socket.Bind( ipEndPoint );
+			socket.Listen( 10 );
+
+			//			foreach ( var ipAddress in ipAddressList ) {
+			//				var socket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
+			//				socket.Connect( ipAddress, SENDBACK_PORT );
+			//				bool bConnected = socket.Connected;
+			//				//var result = socket.BeginConnect( ipAddress, SENDBACK_PORT, null, null );
+			//				//socket.ReceiveTimeout = 1000;
+			//				//bool bConnected = result.AsyncWaitHandle.WaitOne( 100, true );
+			//				if ( bConnected ) {
+			//					while ( socket.Available == 0 ) {
+			//					}
+			//					var rcvBytes = new byte[socket.Available];
+			//					socket.Receive( rcvBytes );
+			//					var rcvString = System.Text.Encoding.UTF8.GetString( rcvBytes );
+			//					if ( rcvString == "ACK" ) {
+			//						connectedIpAddressList.Add( ipAddress );
+			//					}
+			//					socket.Close();
+			//				}
+			//			}
+
 			return connectedIpAddressList;
 		}
 
@@ -236,7 +243,7 @@ namespace NewSyncShooter
 		/// </summary>
 		/// <param name="ipAddress"></param>
 		/// <returns></returns>
-		public byte[] GetPreviewImage( string ipAddress )
+		public static byte[] GetPreviewImage( string ipAddress )
 		{
 			TcpClient tcp = new TcpClient( ipAddress, SHOOTIMAGESERVER_PORT );
 			System.Net.Sockets.NetworkStream ns = tcp.GetStream();
@@ -250,7 +257,7 @@ namespace NewSyncShooter
 
 			// データを受信
 			ulong sum = 0;
-			ulong bytes_to_read = 0;
+			ulong bytesToRead = 0;
 			MemoryStream ms = new MemoryStream();
 			do {
 				if ( tcp.Available == 0 ) {
@@ -272,16 +279,23 @@ namespace NewSyncShooter
 						throw e;
 					}
 				}
-				if ( resSize == 0 ) {
-					continue;
-				}
-				if ( sum == 0 ) {
+				ms.Write( rcvBytes, 0, resSize );
+				if ( ( bytesToRead == 0 ) && ( ms.Length >= 4 ) ) {
 					// 先頭の4バイトには、次に続くデータのサイズが書かれている
-					bytes_to_read = ( (ulong) rcvBytes[0] ) | ( (ulong) rcvBytes[1] << 8 ) | ( (ulong) rcvBytes[2] << 16 ) | ( (ulong) rcvBytes[3] << 24 );
+					byte[] buffer = ms.GetBuffer();
+					bytesToRead = ( (ulong) buffer[0] ) | ( (ulong) buffer[1] << 8 ) | ( (ulong) buffer[2] << 16 ) | ( (ulong) buffer[3] << 24 );
 				}
 				sum += (ulong) resSize;
-				ms.Write( rcvBytes, 0, resSize );
-			} while ( sum < bytes_to_read + 4 );
+				//if ( resSize == 0 ) {
+				//	continue;
+				//}
+				//if ( sum == 0 ) {
+				//	// 先頭の4バイトには、次に続くデータのサイズが書かれている
+				//	bytes_to_read = ( (ulong) rcvBytes[0] ) | ( (ulong) rcvBytes[1] << 8 ) | ( (ulong) rcvBytes[2] << 16 ) | ( (ulong) rcvBytes[3] << 24 );
+				//}
+				//sum += (ulong) resSize;
+				//ms.Write( rcvBytes, 0, resSize );
+			} while ( sum < bytesToRead + 4 );
 			ms.Close();
 			ns.Close();
 			tcp.Close();
@@ -332,63 +346,70 @@ namespace NewSyncShooter
 		/// <summary>
 		/// 指定IPアドレスのカメラの撮影画像を取得する
 		/// （先に SendCommandToGetFullImageInJpeg()で全ラズパイカメラに撮影命令を送信しておく ）
+		/// throws IOException
 		/// </summary>
 		/// <param name="ipAddress"></param>
 		/// <param name="portNo"></param>
 		/// <returns></returns>
-		public byte[] GetFullImageInJpeg( string ipAddress, out int portNo )
+		public static byte[] GetFullImageInJpeg( string ipAddress, out int portNo )
 		{
+#if true
 			// この関数はマルチスレッドで実行されるため、異なるIPアドレスでのデータ受信が
 			// 同じポートで重ならないようにする必要がある。
 			// そのため、IP Address の第4オクテットの数値に応じてポート番号を選択する。
 			int idx = ipAddress.LastIndexOf('.');
 			int adrs4th = int.Parse( ipAddress.Substring( idx  + 1 ) );
 			portNo = SHOOTIMAGESERVER_PORT + ( adrs4th % SHOOTIMAGESERVER_PORT_NUM );
-			System.Diagnostics.Debug.WriteLine( "{0}:{1}", ipAddress, portNo );
-
+#else
+			portNo = SHOOTIMAGESERVER_PORT;
+#endif
+#if true
 			var tcp = new TcpClient( ipAddress, portNo );
-			var ns = tcp.GetStream();
+			tcp.ReceiveTimeout = 10000;
+			tcp.SendTimeout = 10000;
+#else
+			var tcp = new TcpClient();
+			IPEndPoint ep = new IPEndPoint( IPAddress.Parse( ipAddress ), portNo);
+			tcp.Connect( ep );
+#endif
+			NetworkStream ns = tcp.GetStream();
 			ns.ReadTimeout = 10000;
 			ns.WriteTimeout = 10000;
+			//System.Diagnostics.Debug.WriteLine( "{0}:{1}->{2}", ipAddress, portNo, tcp.Client.LocalEndPoint.ToString() );
 
 			// full image 取得コマンドを送信
 			string cmd = "IMG";
 			byte[] cmdBytes = System.Text.Encoding.UTF8.GetBytes( cmd );
 			ns.Write( cmdBytes, 0, cmdBytes.Length );
 
+			var t = DateTime.Now;
 			// データを受信
 			ulong sum = 0;
 			ulong bytesToRead = 0;
-			MemoryStream ms = new MemoryStream();
+			var ms = new MemoryStream();
 			do {
 				if ( tcp.Available == 0 ) {
-					continue;	// Retry
+					TimeSpan ts = DateTime.Now - t;
+					if ( ts.Seconds > 5 ) {
+						return Array.Empty<byte>();
+					}
+					continue;   // Retry
 				}
 				byte[] rcvBytes = new byte[tcp.Available];
-				int resSize;
-				try {
-					resSize = ns.Read( rcvBytes, 0, rcvBytes.Length );
-				} catch ( IOException e ) {
-					if ( e.InnerException is SocketException ) {
-						var socketException = e.InnerException as SocketException;
-						if ( socketException.SocketErrorCode == SocketError.TimedOut ) {
-							resSize = 0;    // 再試行させる
-						} else {
-							throw e;
-						}
-					} else {
-						throw e;
-					}
-				}
-				if ( resSize >= 4 ) {
-					if ( sum == 0 ) {
+				int rcvSum = 0;
+				do {
+					int resSize = ns.Read( rcvBytes, 0, rcvBytes.Length );
+					ms.Write( rcvBytes, 0, resSize );
+					if ( ( bytesToRead == 0 ) && ( ms.Length >= 4 ) ) {
 						// 先頭の4バイトには、次に続くデータのサイズが書かれている
-						bytesToRead = ( (ulong) rcvBytes[0] ) | ( (ulong) rcvBytes[1] << 8 ) | ( (ulong) rcvBytes[2] << 16 ) | ( (ulong) rcvBytes[3] << 24 );
+						byte[] buffer = ms.GetBuffer();
+						bytesToRead = ( (ulong) buffer[0] ) | ( (ulong) buffer[1] << 8 ) | ( (ulong) buffer[2] << 16 ) | ( (ulong) buffer[3] << 24 );
 					}
 					sum += (ulong) resSize;
-					ms.Write( rcvBytes, 0, resSize );
-				}
+					rcvSum += resSize;
+				} while ( rcvSum < rcvBytes.Length );
 			} while ( sum < bytesToRead + 4 );
+			//System.Diagnostics.Debug.WriteLine( ipAddress + ": {0}/{1} complete", sum, bytesToRead );
 
 			ms.Close();
 			ns.Close();

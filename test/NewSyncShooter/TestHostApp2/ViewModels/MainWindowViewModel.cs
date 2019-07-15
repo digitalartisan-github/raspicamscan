@@ -671,7 +671,7 @@ namespace TestHostApp2.ViewModels
 					IsCameraPreviewing.Value = false;
 					try {
 						string sIPAddress = treeItem._ipAddress;
-						byte[] data = _newSyncShooter.GetPreviewImage( sIPAddress );
+						byte[] data = NewSyncShooter.NewSyncShooter.GetPreviewImage( sIPAddress );
 						if ( data.Length > 0 ) {
 							ShowPreviewImage( data );
 						}

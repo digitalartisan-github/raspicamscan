@@ -7,8 +7,7 @@
 						xmlns:prism="http://prismlibrary.com/"
 						prism:ViewModelLocator.AutoWireViewModel="True"
 						xmlns:local="clr-namespace:TestHostApp2.Views"
-						mc:Ignorable="d" 
-						d:DesignHeight="190" d:DesignWidth="400">
+						mc:Ignorable="d">
 	<i:Interaction.Triggers>
 		<prism:InteractionRequestTrigger SourceObject="{Binding CloseWindowRequest, Mode=OneWay}">
 			<local:CloseWindowAction/>
@@ -16,7 +15,7 @@
 	</i:Interaction.Triggers>
 	
 	<StackPanel>
-		<StackPanel Orientation="Horizontal" Margin="0">
+		<StackPanel Orientation="Horizontal" Width="350">
 			<Label Content="画像ファイル転送中..." Margin="8"/>
 			<Label Content="{Binding ProgressValue.Value}" Width="30" HorizontalContentAlignment="Right" VerticalContentAlignment="Center"/>
 			<Label Content="/" VerticalContentAlignment="Center"/>
