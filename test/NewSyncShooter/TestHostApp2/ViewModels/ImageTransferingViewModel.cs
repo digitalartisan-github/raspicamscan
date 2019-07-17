@@ -66,14 +66,19 @@ namespace TestHostApp2.ViewModels
 				notification.SyncShooter.SendCommandToGetFullImageInJpeg();
 				this.ProgressValue.Value = 0;
 				this.Information.Value = string.Empty;
+				System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある
+
 				await Task.Factory.StartNew( () => {
 					int progressCount = 0;
 					try {
 						//object o = new object();
-						notification.ConnectedIPAddressList.AsParallel()./*WithDegreeOfParallelism(8).*/WithCancellation( token ).ForAll( ipAddress => {
+						notification.ConnectedIPAddressList.AsParallel().WithCancellation( token ).ForAll( ipAddress => {
+							//notification.ConnectedIPAddressList.ToList().ForEach( ipAddress => {
 							// 画像を撮影＆取得
+							//System.Diagnostics.Debug.WriteLine( ipAddress );
 							byte[] data = NewSyncShooter.NewSyncShooter.GetFullImageInJpeg( ipAddress, out int portNo );
-							if ( data.Length > 0 ) {
+							//System.Diagnostics.Debug.WriteLine( ipAddress + ":{0}", portNo );
+							if ( ( data != null ) && ( data.Length > 0 ) ) {
 								// IP Address の第4オクテットのファイル名で保存する
 								int idx = ipAddress.LastIndexOf('.');
 								int adrs4th = int.Parse( ipAddress.Substring( idx  + 1 ) );

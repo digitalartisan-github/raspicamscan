@@ -90,7 +90,7 @@ namespace TestHostApp
 		private void ButtonPreview_Click( object sender, RoutedEventArgs e )
 		{
 			foreach (var adrs in _connectedIPAddressList ) {
-				byte[] data = _newSyncShooter.GetPreviewImage(adrs);
+				byte[] data = NewSyncShooter.NewSyncShooter.GetPreviewImage(adrs);
 				String path = string.Format( "preview_{0}.bmp", adrs.ToString() );
 				using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
 					fs.Write( data, 0, (int) data.Length );
@@ -103,7 +103,7 @@ namespace TestHostApp
 			var t = DateTime.Now;
 			_connectedIPAddressList.AsParallel().ForAll( adrs =>
 			{
-				byte[] data = _newSyncShooter.GetFullImageInJpeg(adrs);
+				byte[] data = NewSyncShooter.NewSyncShooter.GetFullImageInJpeg(adrs, out int portNo);
 				String path = string.Format( "full_{0}.jpg", adrs.ToString() );
 				using ( var fs = new FileStream( path, FileMode.Create, FileAccess.ReadWrite ) ) {
 					fs.Write( data, 0, (int) data.Length );

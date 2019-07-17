@@ -408,7 +408,7 @@ namespace TestHostApp2.ViewModels
 				if ( notification2.Confirmed ) {
 					TimeSpan ts = DateTime.Now - t;
 					OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK,
-						"Elapsed : " + ts.ToString( "s\\.fff" ) + " sec" );
+						"画像転送完了\n\nElapsed : " + ts.ToString( "s\\.fff" ) + " sec" );
 				}
 
 				// 「ファイルビュー」表示を更新
