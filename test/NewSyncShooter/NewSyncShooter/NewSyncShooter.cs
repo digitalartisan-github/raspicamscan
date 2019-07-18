@@ -59,16 +59,9 @@ namespace NewSyncShooter
 		/// <returns></returns>
 		public IEnumerable<string> ConnectCamera()
 		{
-			//// UDP マルチキャストを開く
-			//if ( _mcastClient == null ) {
-			//	_mcastClient = new MultiCastClient( MCAST_GRP, MCAST_PORT );
-			//	if ( _mcastClient.Open() == false ) {
-			//		return Array.Empty<string>();
-			//	}
-			//}
 			// 接続できたラズパイのアドレスを列挙する
-			return GetConnectedHostAddressUDP();
-			//return GetConnectedHostAddressTCP();
+			//return GetConnectedHostAddressUDP();
+			return GetConnectedHostAddressTCP();
 		}
 
 		// 接続しているラズパイのアドレスを列挙する(UDP Protocol)（アドレスの第4オクテットの昇順でソート）
@@ -123,34 +116,24 @@ namespace NewSyncShooter
 			}
 			_mcastClient.SendCommand( "INQ" );
 			_mcastClient.Close();
+			System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある
 
-#if false
-			var connectedList = new List<string>();
-			var ipAddressList = _syncshooterDefs.GetAllCameraIPAddress();
-			foreach (var ipAddress in ipAddressList) {
-				IPEndPoint ipe = new IPEndPoint(IPAddress.Parse(ipAddress), SENDBACK_PORT);
-				Socket socket = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-				socket.ReceiveTimeout = 1000;
-				socket.SendTimeout = 1000;
-				socket.Connect( ipe );
-				if (socket.Connected) {
-					connectedList.Add( ipAddress );
-				}
-			}
+#if true
+			var listener = new AsyncTcpListener();
+			var connectedList = listener.StartListening( SENDBACK_PORT );
 			return connectedList;
 #endif
-
 #if false
-			TcpListener tcpListener = new TcpListener( IPAddress.Loopback, SENDBACK_PORT );
-			//TcpListener tcpListener = new TcpListener( IPAddress.Any, SENDBACK_PORT );
+			//TcpListener tcpListener = new TcpListener( IPAddress.Loopback, SENDBACK_PORT );
+			TcpListener tcpListener = new TcpListener( IPAddress.Any, SENDBACK_PORT );
 			tcpListener.Start();
 
 			var connectedList = new List<string>();
 			while ( true ) {
-				TcpClient tcpClient = tcpListener.AcceptTcpClient();
+				TcpClient tcpClient = tcpListener.AcceptTcpClient();	// 同期バージョンでは、ここで応答がないと戻ってこない
 				NetworkStream ms = tcpClient.GetStream();
-				byte[] bytes = new byte[8];
-				ms.Read( bytes, 0, bytes.Length );
+				byte[] bytes = new byte[tcpClient.Available];
+				ms.Read( bytes, 0, tcpClient.Available );
 				string msg = System.Text.Encoding.UTF8.GetString( bytes );
 				if ( msg == "ACK" ) {
 					var remoteEP = tcpClient.Client.RemoteEndPoint as IPEndPoint;
@@ -158,9 +141,41 @@ namespace NewSyncShooter
 				}
 				tcpClient.Close();
 			}
-
 #endif
-#if true
+#if false
+			// 同期サーバーは、クライアントが応答しない場合に抜け出せない。。。
+			IPEndPoint localEP = new IPEndPoint( IPAddress.Any, SENDBACK_PORT );
+			List<string> connectedList = new List<string>();
+			using ( Socket listener = new Socket( localEP.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp ) ) {
+				var start = DateTime.Now;
+				try {
+					listener.Bind( localEP );
+					listener.Listen( 128 );
+					TimeSpan ts = DateTime.Now - start;
+					while ( ts.Seconds < 5 ) {
+						Socket handler = listener.Accept();
+						byte[] bytes = new byte[8];
+						int bytesRec = handler.Receive( bytes );
+						string msg = System.Text.Encoding.UTF8.GetString( bytes );
+						if ( msg == "ACK" ) {
+							var remoteEP = handler.RemoteEndPoint as IPEndPoint;
+							connectedList.Add( remoteEP.Address.ToString() );
+						}
+						handler.Shutdown( SocketShutdown.Both );
+						handler.Close();
+						ts = DateTime.Now - start;
+					}
+				} catch ( Exception e ) {
+					Console.WriteLine( e.ToString() );
+				}
+			}
+			return connectedList.OrderBy( adrs => {
+				int idx = adrs.LastIndexOf('.');
+				int adrs4th = int.Parse(adrs.Substring( idx  + 1 ));
+				return adrs4th;
+			} );
+#endif
+#if false
 			var ipAddressList = _syncshooterDefs.GetAllCameraIPAddress();
 			var listener = new AsyncSocketListener();
 			var connectedList =  listener.StartListening( SENDBACK_PORT );

@@ -31,7 +31,7 @@
 			<ColumnDefinition/>
 		</Grid.ColumnDefinitions>
 		<Label Grid.Row="0" Grid.Column="0" Content="作成ショット :" Margin="4"/>
-		<TextBox Grid.Row="0" Grid.Column="1" Width="250" Height="24" HorizontalAlignment="Left" Margin="8" IsEnabled="False" Text="{Binding ImageFolderPath.Value}"/>
+		<TextBox Grid.Row="0" Grid.Column="1" Width="250" Height="24" HorizontalAlignment="Left" Margin="8" IsReadOnly="True" Text="{Binding ImageFolderPath.Value}"/>
 		<Label Grid.Row="1" Grid.Column="0" Content="出力先 :" Margin="4"/>
 		<StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="4">
 			<TextBox Width="250" Height="24" HorizontalAlignment="Left" Margin="4" Text="{Binding ThreeDDataFolderPath.Value}"/>

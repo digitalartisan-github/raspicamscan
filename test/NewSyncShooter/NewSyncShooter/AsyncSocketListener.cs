@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -10,55 +11,68 @@ namespace NewSyncShooter
 {
 	public class AsyncSocketListener
 	{
+		public class AcceptStateObject
+		{
+			public Socket Listener = null;
+			public string Accepted = null;
+		}
+
 		public class StateObject
 		{
 			public Socket workSocket = null;
 			public const int BufferSize = 1024;
 			public byte[] buffer = new byte[BufferSize];
 			public StringBuilder sb = new StringBuilder();
-			public bool Result = false;
-			//public List<string> ConnectedList = new List<string>();
 		}
 
-		private static ManualResetEvent allDone = new ManualResetEvent(false);
+		private static ManualResetEvent acceptDone = new ManualResetEvent(false);
 
-		public List<string> StartListening( int portNo )
+		public IEnumerable<string> StartListening( int portNo )
 		{
-			IPEndPoint localEP = new IPEndPoint( IPAddress.Loopback, portNo );
+			IPEndPoint localEP = new IPEndPoint( IPAddress.Any, portNo );
 			Console.WriteLine( $"Local address and port : {localEP.ToString()}" );
-			Socket listener = new Socket(localEP.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 			List<string> connectedList = new List<string>();
+			Socket listener = new Socket( localEP.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp );
 			var start = DateTime.Now;
 			try {
 				listener.Bind( localEP );
 				listener.Listen( 128 );
 				TimeSpan ts = DateTime.Now - start;
 				while ( ts.Seconds < 5 ) {
-					allDone.Reset();
+					acceptDone.Reset();
 					Console.WriteLine( "Waiting for a connection..." + ts.Seconds.ToString() );
-					var ar = listener.BeginAccept( new AsyncCallback( AcceptCallback ), listener );
-					if ( allDone.WaitOne( 1000 ) ) {
-						var state = ar.AsyncState as StateObject;
-						if ( state.Result ) {
-							connectedList.Add( state.workSocket.RemoteEndPoint.ToString() );
-						}
+					var state = new AcceptStateObject() {
+						Listener = listener,
+					};
+					var ar = listener.BeginAccept( new AsyncCallback( AcceptCallback ), state );
+					if ( acceptDone.WaitOne( 1000 ) ) {
+						connectedList.Add( state.Accepted );
 					}
 					ts = DateTime.Now - start;
 				}
 			} catch ( Exception e ) {
 				Console.WriteLine( e.ToString() );
 			}
-			return connectedList;
+			// アドレスの第4オクテットの昇順でソート
+			return connectedList.OrderBy( adrs => {
+				int idx = adrs.LastIndexOf('.');
+				int adrs4th = int.Parse(adrs.Substring( idx  + 1 ));
+				return adrs4th;
+			} );
 		}
 
 		public static void AcceptCallback( IAsyncResult ar )
 		{
 			// Get the socket that handles the client request.  
-			Socket listener = (Socket) ar.AsyncState;
-			Socket handler = listener.EndAccept(ar);
+			//Socket listener = (Socket) ar.AsyncState;
+			//Socket handler = listener.EndAccept(ar);	// hander.RemoveEndPoint にリモートEPの情報が入っている
+			AcceptStateObject acceptState = ar.AsyncState as AcceptStateObject;
+			Socket listener = acceptState.Listener;
+			Socket handler = listener.EndAccept( ar );
+			acceptState.Accepted = ( handler.RemoteEndPoint as IPEndPoint ).Address.ToString();
 
 			// Signal the main thread to continue.  
-			allDone.Set();
+			acceptDone.Set();
 
 			// Create the state object.  
 			StateObject state = new StateObject();
@@ -86,14 +100,12 @@ namespace NewSyncShooter
 					// display it on the console.  
 					string content = state.sb.ToString();
 					Console.WriteLine( $"Read {content.Length} bytes from socket.\n Data : {content}" );
-					state.Result = ( content == "ACK" );
-					//if (content == "ACK") {
-					//	var ep = state.workSocket.RemoteEndPoint as IPEndPoint;
-					//	state.ConnectedList.Add( ep.Address.ToString() );
-					//}
+					// content に "ACK" が入っている
+					//state.Result = ( content == "ACK" );
+					handler.Shutdown( SocketShutdown.Both );
+					handler.Close();
+					handler.Dispose();
 				}
-				handler.Shutdown( SocketShutdown.Both );
-				handler.Close();
 			}
 		}
 	}
