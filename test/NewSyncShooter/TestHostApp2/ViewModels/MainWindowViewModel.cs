@@ -75,6 +75,7 @@ namespace TestHostApp2.ViewModels
 		public ReactiveCommand NetworkSettingCommand { get; }
 		public ReactiveCommand ThreeDBuildingOneCommand { get; }
 		public ReactiveCommand ThreeDBuildingAllCommand { get; }
+		public ReactiveCommand ThreeDBuildingStopCommand { get; }
 		public ReactiveCommand ThreeDDataFolderOpeningCommand { get; }
 		public ReactiveCommand FileViewOpenFolderCommand { get; }
 		public ReactiveCommand FileViewDeleteFolderCommand { get; }
@@ -184,6 +185,8 @@ namespace TestHostApp2.ViewModels
 			ThreeDBuildingOneCommand.Subscribe( RaiseThreeDBuildingOne );
 			ThreeDBuildingAllCommand = this.ProjectName.Select( p => !string.IsNullOrEmpty( p ) ).ToReactiveCommand();
 			ThreeDBuildingAllCommand.Subscribe( RaiseThreeDBuildingAll );
+			ThreeDBuildingStopCommand = this.ProjectName.Select( p => !string.IsNullOrEmpty( p ) ).ToReactiveCommand();
+			ThreeDBuildingStopCommand.Subscribe( RaiseThreeDBuildingStop );
 			ThreeDDataFolderOpeningCommand = new[] { this.ProjectName, this.ThreeDDataFolderPath }.CombineLatest( x => x.All( y => !string.IsNullOrEmpty( y ) ) ).ToReactiveCommand();
 			ThreeDDataFolderOpeningCommand.Subscribe( RaiseThreeDDataFolderOpening );
 			FileViewOpenFolderCommand = new ReactiveCommand();
@@ -320,16 +323,6 @@ namespace TestHostApp2.ViewModels
 					break;
 				}
 			}
-			//var cameraItems = new List<CameraSubTreeItem>();
-			//foreach ( var item in this.CameraTree.First().Items.SourceCollection ) {
-			//	var cameraItem = item as CameraSubTreeItem;
-			//	if ( cameraItem.IsSelected ) {
-			//		cameraItems.Add( cameraItem );
-			//	}
-			//}
-			//if ( cameraItems.Count == 0 ) {
-			//	return;
-			//}
 			var selectedIPAddress = selectedItem._ipAddress;
 			// そのアドレスのカメラのカメラパラメータを取得する
 			var selectedCameraParam = _newSyncShooter.GetCameraParam( selectedIPAddress );
@@ -347,16 +340,6 @@ namespace TestHostApp2.ViewModels
 				ApplyAll = param => this.ConnectedIPAddressList.AsParallel().ForAll( adrs => _newSyncShooter.SetCameraParam( adrs, param ) ),
 		};
 			CameraSettingRequest.Raise( notification );
-			//if ( notification.Confirmed ) {
-			//	var param = notification.CameraParameter;
-			//	if ( notification.IsApplyToAllCamera ) {
-			//		// 全てアドレスに対して設定
-			//		this.ConnectedIPAddressList.AsParallel().ForAll( adrs => _newSyncShooter.SetCameraParam( adrs, param ) );
-			//	} else {
-			//		// 選択中のアドレスのみに対して設定
-			//		_newSyncShooter.SetCameraParam( selectedIPAddress, param );
-			//	}
-			//}
 		}
 
 		/// <summary>
@@ -529,41 +512,53 @@ namespace TestHostApp2.ViewModels
 		/// </summary>
 		void RaiseThreeDBuildingOne()
 		{
-			var items = this.FileTree.First().Items.SourceCollection;
-			foreach ( var item in items ) {
-				var treeItem = item as FileTreeItem;
-				if ( treeItem.IsSelected ) {
-					var notification = new ThreeDBuildingNotification
-					{
-						Title = "3Dモデル作成",
-						ImageFolderPath = treeItem._Directory.FullName,// プロジェクトフォルダの下の、TreeView上で選択中の画像フォルダ
-						ThreeDDataFolderPath = this.ThreeDDataFolderPath.Value,
-						IsCutPetTable = this.IsCutPetTable.Value,
-						IsEnableSkipAlreadyBuilt = false,
-					};
-					ThreeDBuildingOneRequest.Raise( notification );
-					if ( notification.Confirmed ) {
-						this.ThreeDDataFolderPath.Value = notification.ThreeDDataFolderPath;
-						this.IsCutPetTable.Value = notification.IsCutPetTable;
+			if ( this.FileTree.First().Items.IsEmpty) {
+				return;
+			}
+			// ファイルビューで選択中のフォルダ、または選択されているフォルダがなければ最後のフォルダを選択する
+			var items = new FileTreeItem[this.FileTree.First().Items.Count];
+			this.FileTree.First().Items.CopyTo( items, 0 );
+			var treeItem = items.FirstOrDefault( x => x.IsSelected );
+			if ( treeItem == null) {
+				treeItem = items.Last();
+			}
+			var notification = new ThreeDBuildingNotification
+			{
+				Title = "3Dモデル作成",
+				ImageFolderPath = treeItem._Directory.FullName,// プロジェクトフォルダの下の、TreeView上で選択中の画像フォルダ
+				ThreeDDataFolderPath = this.ThreeDDataFolderPath.Value,
+				IsCutPetTable = this.IsCutPetTable.Value,
+				IsEnableSkipAlreadyBuilt = false,
+			};
+			ThreeDBuildingOneRequest.Raise( notification );
+			if ( notification.Confirmed ) {
+				this.ThreeDDataFolderPath.Value = notification.ThreeDDataFolderPath;
+				this.IsCutPetTable.Value = notification.IsCutPetTable;
 
-						var startInfo = new ProcessStartInfo();
-						// バッチファイルを起動する人は、cmd.exeさんなので
-						startInfo.FileName = "cmd.exe";
-						// コマンド処理実行後、コマンドウィンドウ終わるようにする。
-						//（↓「/c」の後の最後のスペース1文字は重要！）
-						startInfo.Arguments = "/c ";
-						// コマンド処理であるバッチファイル （ここも最後のスペース重要）
-						startInfo.Arguments += @"..\..\UserRibbonButtons\button1.bat ";
-						// バッチファイルへの引数 
-						var srgString = this.ProjectFolderPath.Value + " " + this.ThreeDDataFolderPath.Value;
-						startInfo.Arguments += srgString;
-						// ●バッチファイルを別プロセスとして起動
-						var proc = Process.Start(startInfo);
-						// ●上記バッチ処理が終了するまで待ちます。
-						proc.WaitForExit();
+				if (Directory.Exists( this.ThreeDDataFolderPath.Value ) == false ) {
+					if (OpenMessageBox( this.Title.Value, MessageBoxImage.Question, MessageBoxButton.YesNo, MessageBoxResult.Yes,
+						"フォルダ\n" + this.ThreeDDataFolderPath.Value + " は存在しません。\n作成しますか？" ) == MessageBoxResult.Yes ) {
+						try {
+							Directory.CreateDirectory( this.ThreeDDataFolderPath.Value );
+						} catch (Exception e) {
+							OpenMessageBox( this.Title.Value, MessageBoxImage.Stop, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
+							return;
+						}
+					} else {
+						return;
 					}
-					break;
 				}
+
+				var startInfo = new ProcessStartInfo();
+				startInfo.FileName = "cmd.exe";
+				startInfo.Arguments = "/k ";	// <- 本番は "/c"
+				startInfo.Arguments += @"C:\DN3D\SyncShooter\UserRibbonButtons\button1.bat ";
+				var argString = "\"" + notification.ImageFolderPath + "\" " +
+								"\"" + this.ThreeDDataFolderPath.Value + "\" " +
+								(this.IsCutPetTable.Value ? "yes" : "no");
+				startInfo.Arguments += argString;
+				var proc = Process.Start(startInfo);
+				proc.WaitForExit();
 			}
 		}
 
@@ -587,15 +582,40 @@ namespace TestHostApp2.ViewModels
 				this.IsCutPetTable.Value = notification.IsCutPetTable;
 				this.IsSkipAlreadyBuilt.Value = notification.IsSkipAlreadyBuilt;
 
+				if ( Directory.Exists( this.ThreeDDataFolderPath.Value ) == false ) {
+					if ( OpenMessageBox( this.Title.Value, MessageBoxImage.Question, MessageBoxButton.YesNo, MessageBoxResult.Yes,
+						"フォルダ\n" + this.ThreeDDataFolderPath.Value + " は存在しません。\n作成しますか？" ) == MessageBoxResult.Yes ) {
+						try {
+							Directory.CreateDirectory( this.ThreeDDataFolderPath.Value );
+						} catch ( Exception e ) {
+							OpenMessageBox( this.Title.Value, MessageBoxImage.Stop, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
+							return;
+						}
+					} else {
+						return;
+					}
+				}
+
 				var startInfo = new ProcessStartInfo();
 				startInfo.FileName = "cmd.exe";
-				startInfo.Arguments = "/c ";
-				startInfo.Arguments += @"..\..\UserRibbonButtons\button2.bat ";
-				var srgString = this.ProjectFolderPath.Value + " " + this.ThreeDDataFolderPath.Value;
-				startInfo.Arguments += srgString;
+				startInfo.Arguments = "/k ";    // <- 本番は "/c"
+				startInfo.Arguments += @"C:\DN3D\SyncShooter\UserRibbonButtons\button2.bat ";
+				var argString = "\"" + this.ProjectFolderPath.Value + "\" " +
+								 "\"" + this.ThreeDDataFolderPath.Value + "\" " +
+								(this.IsCutPetTable.Value ? "yes" : "no") + " " +
+								(this.IsSkipAlreadyBuilt.Value ? "skip" : "??");
+				startInfo.Arguments += argString;
 				var proc = Process.Start(startInfo);
 				proc.WaitForExit();
 			}
+		}
+
+		/// <summary>
+		/// 3D - 作成中断
+		/// </summary>
+		void RaiseThreeDBuildingStop()
+		{
+			// unknown
 		}
 
 		/// <summary>

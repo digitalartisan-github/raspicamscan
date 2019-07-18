@@ -37,12 +37,14 @@ namespace TestHostApp2.ViewModels
 			ThreeDBuildingNotification notification = _notification as ThreeDBuildingNotification;
 			var folderNotification = new FolderSelectDialogConfirmation()
 			{
+				InitialDirectory = notification.ThreeDDataFolderPath,
 				SelectedPath = notification.ThreeDDataFolderPath,
 				RootFolder = Environment.SpecialFolder.Personal,
 				ShowNewFolderButton = false
 			};
 			BrowseFolderRequest.Raise( folderNotification );
 			if ( folderNotification.Confirmed ) {
+				this.ThreeDDataFolderPath.Value =
 				notification.ThreeDDataFolderPath = folderNotification.SelectedPath;;
 			}
 		}

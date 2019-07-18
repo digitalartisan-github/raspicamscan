@@ -10,7 +10,7 @@
 						prism:ViewModelLocator.AutoWireViewModel="True"
 						xmlns:local="clr-namespace:TestHostApp2.Views"
 						mc:Ignorable="d" 
-						d:DesignHeight="200" d:DesignWidth="400">
+						d:DesignHeight="200" d:DesignWidth="500">
 	
 	<i:Interaction.Triggers>
 		<prism:InteractionRequestTrigger SourceObject="{Binding BrowseFolderRequest}">
@@ -31,10 +31,10 @@
 			<ColumnDefinition/>
 		</Grid.ColumnDefinitions>
 		<Label Grid.Row="0" Grid.Column="0" Content="作成ショット :" Margin="4"/>
-		<TextBox Grid.Row="0" Grid.Column="1" Width="250" Height="24" HorizontalAlignment="Left" Margin="8" IsReadOnly="True" Text="{Binding ImageFolderPath.Value}"/>
+		<TextBox Grid.Row="0" Grid.Column="1" Width="350" Height="24" HorizontalAlignment="Left" Margin="8" IsReadOnly="True" Text="{Binding ImageFolderPath.Value}"/>
 		<Label Grid.Row="1" Grid.Column="0" Content="出力先 :" Margin="4"/>
 		<StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="4">
-			<TextBox Width="250" Height="24" HorizontalAlignment="Left" Margin="4" Text="{Binding ThreeDDataFolderPath.Value}"/>
+			<TextBox Width="350" Height="24" HorizontalAlignment="Left" Margin="4" Text="{Binding ThreeDDataFolderPath.Value}"/>
 			<Button Content="参照" Height="24" Width="48" Margin="4" Command="{Binding BrowseFolderCommand}"/>
 		</StackPanel>
 		<CheckBox Grid.Row="2" Grid.Column="1" VerticalContentAlignment="Center" Content="ペット台の自動カット" Margin="4" IsChecked="{Binding IsCutPetTable.Value}">

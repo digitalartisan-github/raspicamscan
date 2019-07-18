@@ -23,11 +23,11 @@ namespace NewSyncShooter
 		public IEnumerable<string> StartListening( int portNo )
 		{
 			TcpListener listener = new TcpListener( IPAddress.Any, portNo );
-			listener.Start();
-			TimeSpan waitTime = TimeSpan.FromMilliseconds( 500 );
-			System.Threading.Thread.Sleep( waitTime );				// ここでウエイトを置かないと、下で Pending()がfalseのままですぐに抜けてしまう
 			List<string> connectedList = new List<string>();
 			try {
+				listener.Start();
+				TimeSpan waitTime = TimeSpan.FromMilliseconds( 500 );
+				System.Threading.Thread.Sleep( waitTime );              // ここでウエイトを置かないと、下で Pending()がfalseのままですぐに抜けてしまう
 				while ( listener.Pending() ) {
 					var state = new AcceptStateObject() {
 						Listener = listener,
@@ -42,6 +42,8 @@ namespace NewSyncShooter
 						System.Diagnostics.Debug.WriteLine( "TIMEOUT" );
 					}
 				}
+			} catch ( Exception e ) {
+				System.Diagnostics.Debug.WriteLine( e.Message );
 			} finally {
 				listener.Stop();
 			}

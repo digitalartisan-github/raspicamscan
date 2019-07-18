@@ -50,7 +50,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncImageReceiver.cs" />
-    <Compile Include="AsyncSocketListener.cs" />
     <Compile Include="AsyncTcpListener.cs" />
     <Compile Include="CameraParam.cs" />
     <Compile Include="MultiCastClient.cs" />

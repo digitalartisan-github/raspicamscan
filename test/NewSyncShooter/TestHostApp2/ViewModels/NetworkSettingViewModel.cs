@@ -25,6 +25,9 @@ namespace TestHostApp2.ViewModels
 		private IConfirmation _notification;
 
 		public List<NetworkInfo> NetworkInfoList { get; set; } = new List<NetworkInfo>();
+		public ReactiveProperty<int> SelectedIndex { get; set; } = new ReactiveProperty<int>( 0 );
+		public ReactiveProperty<string> InterfaceName { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> IPAddress { get; set; } = new ReactiveProperty<string>( string.Empty );
 
 		public DelegateCommand OkCommand { get; private set; }
 		public DelegateCommand CancelCommand { get; private set; }
@@ -35,6 +38,10 @@ namespace TestHostApp2.ViewModels
 		public NetworkSettingViewModel()
 		{
 			collectNetworkInformation();
+			SelectedIndex.Subscribe( idx => {
+				this.InterfaceName.Value = this.NetworkInfoList[idx].InterfaceName;
+				this.IPAddress.Value = this.NetworkInfoList[idx].IPAddress;
+			} );
 			OkCommand = new DelegateCommand( OKInteraction );
 			CancelCommand = new DelegateCommand( CancelInteraction );
 		}

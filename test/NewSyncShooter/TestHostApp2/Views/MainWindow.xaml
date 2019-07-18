@@ -147,7 +147,7 @@
 				<RibbonGroup Header="3D作成">
 					<RibbonButton Label="1ショット" LargeImageSource="Images/guest_filled_100px.png" Command="{Binding ThreeDBuildingOneCommand}"/>
 					<RibbonButton Label="全てのショット" LargeImageSource="Images/groups_filled_100px.png" Command="{Binding ThreeDBuildingAllCommand}"/>
-					<RibbonButton Label="作成中断" LargeImageSource="Images/remove_user_male_60px.png" IsEnabled="False"/>
+					<RibbonButton Label="作成中断" LargeImageSource="Images/remove_user_male_60px.png" Command="{Binding ThreeDBuildingStopCommand}"/>
 					<RibbonButton Label="フォルダを開く" LargeImageSource="Images/user_folder_100px.png" Command="{Binding ThreeDDataFolderOpeningCommand}"/>
 				</RibbonGroup>
 			</RibbonTab>

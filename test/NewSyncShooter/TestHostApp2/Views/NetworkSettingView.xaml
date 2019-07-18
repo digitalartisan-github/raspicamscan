@@ -10,7 +10,7 @@
 			prism:ViewModelLocator.AutoWireViewModel="True"
 			xmlns:local="clr-namespace:TestHostApp2.Views"
 			mc:Ignorable="d" 
-			d:DesignHeight="300" d:DesignWidth="400">
+			d:DesignHeight="300" d:DesignWidth="480">
 	
 	<DockPanel>
 		<Label DockPanel.Dock="Top" Content="使用するネットワークインターフェイスを選択してください" HorizontalContentAlignment="Center"/>
@@ -21,19 +21,22 @@
 				<RowDefinition/>
 			</Grid.RowDefinitions>
 			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="120"/>
 				<ColumnDefinition/>
 			</Grid.ColumnDefinitions>
 			<Label Grid.Row="0" Grid.Column="0" Margin="4" HorizontalContentAlignment="Right" Content="インターフェイス名 :"/>
-			<TextBox Grid.Row="0" Grid.Column="1" Margin="4" IsEnabled="False" Width="300" HorizontalAlignment="Left" Text="{Binding InterfaceName.Value}"/>
+			<TextBox Grid.Row="0" Grid.Column="1" Margin="4" IsReadOnly="True" Width="auto" HorizontalAlignment="Stretch" VerticalContentAlignment="Center"
+							 Text="{Binding InterfaceName.Value}"/>
 			<Label Grid.Row="1" Grid.Column="0" Margin="4" HorizontalContentAlignment="Right" Content="IPアドレス :"/>
-			<TextBox Grid.Row="1" Grid.Column="1" Margin="4" IsEnabled="False" Width="150" HorizontalAlignment="Left" Text="{Binding IPAddress.Value}"/>
+			<TextBox Grid.Row="1" Grid.Column="1" Margin="4" IsReadOnly="True" Width="150" HorizontalAlignment="Left" VerticalContentAlignment="Center"
+							 Text="{Binding IPAddress.Value}"/>
 		</Grid>
 
-		<DataGrid DockPanel.Dock="Top" Height="130" Margin="8" ItemsSource="{Binding NetworkInfoList}" AutoGenerateColumns="False" GridLinesVisibility="None">
+		<DataGrid DockPanel.Dock="Top" Height="130" Margin="8" AutoGenerateColumns="False" GridLinesVisibility="None"
+							ItemsSource="{Binding NetworkInfoList}" SelectedIndex="{Binding SelectedIndex.Value}">
 			<DataGrid.Columns>
 				<DataGridTextColumn Header=" " Width="10" IsReadOnly="True" Binding="{Binding Selected}"/>
-				<DataGridTextColumn Header="インターフェイス名" Width="250" IsReadOnly="True" Binding="{Binding InterfaceName}"/>
+				<DataGridTextColumn Header="インターフェイス名" Width="300" IsReadOnly="True" Binding="{Binding InterfaceName}"/>
 				<DataGridTextColumn Header="IPアドレス" Width="100" IsReadOnly="True" Binding="{Binding IPAddress}"/>
 			</DataGrid.Columns>
 		</DataGrid>
