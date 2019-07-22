@@ -24,5 +24,10 @@ namespace TestHostApp2.Views
 		{
 			InitializeComponent();
 		}
+
+		private void UserControl_Loaded( object sender, RoutedEventArgs e )
+		{
+			this.TextBox_Name.Focus();
+		}
 	}
 }

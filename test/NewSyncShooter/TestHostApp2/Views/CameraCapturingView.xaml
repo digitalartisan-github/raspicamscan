@@ -7,8 +7,8 @@
 						prism:ViewModelLocator.AutoWireViewModel="True"
 						xmlns:local="clr-namespace:TestHostApp2.Views"
 						mc:Ignorable="d" 
-						d:DesignHeight="200" d:DesignWidth="400">
-	<Grid>
+						d:DesignHeight="200" d:DesignWidth="400" Loaded="UserControl_Loaded">
+	<Grid FocusManager.FocusedElement="{Binding ElementName=TextBox_Name}">
 		<Grid.RowDefinitions>
 			<RowDefinition/>
 			<RowDefinition/>
@@ -19,7 +19,9 @@
 			<ColumnDefinition/>
 		</Grid.ColumnDefinitions>
 		<Label Grid.Row="0" Grid.Column="0" Content="撮影番号 :" Margin="4" VerticalContentAlignment="Center"/>
-		<TextBox Grid.Row="0" Grid.Column="1" Width="250" Height="24" HorizontalAlignment="Left" Margin="4" Text="{Binding CapturingName.Value, UpdateSourceTrigger=PropertyChanged}"/>
+		<TextBox Grid.Row="0" Grid.Column="1" x:Name="TextBox_Name"
+						 Width="250" Height="24" HorizontalAlignment="Left" Margin="4" VerticalContentAlignment="Center"
+						 Text="{Binding CapturingName.Value, UpdateSourceTrigger=PropertyChanged}"/>
 		<Label Grid.Row="1" Grid.Column="1" Content="撮影フォルダ名の最後に ( )付きで追加されます。"/>
 		<StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="4">
 			<Button Content="撮影" Width="60" Height="24" Margin="4" IsDefault="True" Command="{Binding OKCommand}"/>

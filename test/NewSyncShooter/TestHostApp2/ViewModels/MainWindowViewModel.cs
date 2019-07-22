@@ -162,7 +162,6 @@ namespace TestHostApp2.ViewModels
 			OpenFolderCommand.Subscribe( RaiseOpenFolderCommand );
 			CameraConnectionCommand = new ReactiveCommand();
 			CameraConnectionCommand.Subscribe( RaiseCameraConnection );
-			//CameraSettingCommand = new ReactiveCommand();
 			CameraSettingCommand = this.IsCameraConnected.ToReactiveCommand();
 			CameraSettingCommand.Subscribe( RaiseCameraSetting );
 			CameraCapturingCommand = this.IsCameraConnected.CombineLatest( this.ProjectName, ( c, p ) => c && !string.IsNullOrEmpty( p ) ).ToReactiveCommand();

@@ -26,8 +26,8 @@ namespace NewSyncShooter
 			List<string> connectedList = new List<string>();
 			try {
 				listener.Start();
-				TimeSpan waitTime = TimeSpan.FromMilliseconds( 500 );
-				System.Threading.Thread.Sleep( waitTime );              // ここでウエイトを置かないと、下で Pending()がfalseのままですぐに抜けてしまう
+				TimeSpan waitTime = TimeSpan.FromMilliseconds( 1000 );
+				System.Threading.Thread.Sleep( waitTime );				// ここでウエイトを置かないと、下で Pending()がfalseのままですぐに抜けてしまう
 				while ( listener.Pending() ) {
 					var state = new AcceptStateObject() {
 						Listener = listener,
