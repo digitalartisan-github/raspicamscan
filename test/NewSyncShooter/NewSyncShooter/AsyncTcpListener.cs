@@ -20,14 +20,15 @@ namespace NewSyncShooter
 		static ManualResetEvent _tcpClientConnected = new ManualResetEvent(false);
 
 		// Accept one client connection asynchronously.
-		public IEnumerable<string> StartListening( int portNo )
+		public IEnumerable<string> StartListening( string localHostIP, int portNo )
 		{
-			TcpListener listener = new TcpListener( IPAddress.Any, portNo );
+			TcpListener listener = new TcpListener( IPAddress.Parse( localHostIP ), portNo );
+			//TcpListener listener = new TcpListener( IPAddress.Any, portNo );
 			List<string> connectedList = new List<string>();
 			try {
 				listener.Start();
 				TimeSpan waitTime = TimeSpan.FromMilliseconds( 1000 );
-				System.Threading.Thread.Sleep( waitTime );				// ここでウエイトを置かないと、下で Pending()がfalseのままですぐに抜けてしまう
+				System.Threading.Thread.Sleep( waitTime );              // ここでウエイトを置かないと、下で Pending()がfalseのままですぐに抜けてしまう
 				while ( listener.Pending() ) {
 					var state = new AcceptStateObject() {
 						Listener = listener,
@@ -36,7 +37,6 @@ namespace NewSyncShooter
 					_tcpClientConnected.Reset();
 					var acceptDone = listener.BeginAcceptTcpClient( new AsyncCallback( DoAcceptTcpClientCallback ), state );
 					if ( _tcpClientConnected.WaitOne( waitTime ) ) {
-						//System.Diagnostics.Debug.WriteLine( state.Accepted );
 						connectedList.Add( state.AcceptedAddress );
 					} else {
 						System.Diagnostics.Debug.WriteLine( "TIMEOUT" );

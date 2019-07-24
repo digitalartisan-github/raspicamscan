@@ -10,7 +10,7 @@
 			prism:ViewModelLocator.AutoWireViewModel="True"
 			xmlns:local="clr-namespace:TestHostApp2.Views"
 			mc:Ignorable="d" 
-			d:DesignHeight="300" d:DesignWidth="480">
+			d:DesignHeight="300" d:DesignWidth="480" Loaded="UserControl_Loaded">
 	
 	<DockPanel>
 		<Label DockPanel.Dock="Top" Content="使用するネットワークインターフェイスを選択してください" HorizontalContentAlignment="Center"/>
@@ -32,7 +32,8 @@
 							 Text="{Binding IPAddress.Value}"/>
 		</Grid>
 
-		<DataGrid DockPanel.Dock="Top" Height="130" Margin="8" AutoGenerateColumns="False" GridLinesVisibility="None"
+		<DataGrid DockPanel.Dock="Top" Height="130" Margin="8" x:Name="DataGrid_Network"
+							AutoGenerateColumns="False" GridLinesVisibility="None"
 							ItemsSource="{Binding NetworkInfoList}" SelectedIndex="{Binding SelectedIndex.Value}">
 			<DataGrid.Columns>
 				<DataGridTextColumn Header=" " Width="10" IsReadOnly="True" Binding="{Binding Selected}"/>

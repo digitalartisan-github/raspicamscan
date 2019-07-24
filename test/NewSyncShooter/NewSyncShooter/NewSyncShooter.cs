@@ -47,11 +47,11 @@ namespace NewSyncShooter
 		/// 戻り値：	接続できたカメラのIPアドレスの配列
 		/// </summary>
 		/// <returns></returns>
-		public IEnumerable<string> ConnectCamera()
+		public IEnumerable<string> ConnectCamera(string localHostIP)
 		{
 			// 接続できたラズパイのアドレスを列挙する
 			//return GetConnectedHostAddressUDP();
-			return GetConnectedHostAddressTCP();
+			return GetConnectedHostAddressTCP( localHostIP );
 		}
 
 		// 接続しているラズパイのアドレスを列挙する(UDP Protocol)（アドレスの第4オクテットの昇順でソート）
@@ -98,7 +98,7 @@ namespace NewSyncShooter
 		}
 
 		// 接続しているラズパイのアドレスを列挙する(TCP Protocol)（アドレスの第4オクテットの昇順でソート）
-		public IEnumerable<string> GetConnectedHostAddressTCP()
+		public IEnumerable<string> GetConnectedHostAddressTCP( string localHostIP )
 		{
 			// マルチキャストに参加しているラズパイに"INQ"コマンドを送信
 			if ( _mcastClient.Open() == false ) {
@@ -109,7 +109,7 @@ namespace NewSyncShooter
 			System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある
 
 			var listener = new AsyncTcpListener();
-			var connectedList = listener.StartListening( SENDBACK_PORT );
+			var connectedList = listener.StartListening( localHostIP, SENDBACK_PORT );
 			return connectedList;
 		}
 

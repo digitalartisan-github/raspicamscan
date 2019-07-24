@@ -27,6 +27,7 @@ namespace TestHostApp2.ViewModels
 		private readonly string _registryBaseKey = @"Software\DiGITAL ARTISAN";
 		private readonly Models.Project _project = new Models.Project();
 		private NewSyncShooter.NewSyncShooter _newSyncShooter;
+		private string _localHostIP = "0.0.0.0";
 		private DispatcherTimer _previewingTimer;
 
 		#region Properties
@@ -93,7 +94,12 @@ namespace TestHostApp2.ViewModels
 		public MainWindowViewModel()
 		{
 			// レジストリからプロジェクト情報を復元する
-			_project.Load( Path.Combine( _registryBaseKey, this.Title.Value ) );
+			string sBaseRegKey = Path.Combine( _registryBaseKey, this.Title.Value );
+			_project.Load( sBaseRegKey );
+			// その他環境変数
+			var regkey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( Path.Combine( sBaseRegKey, "Environment" ) );
+			_localHostIP = regkey.GetValue( "LocalHostIP", _localHostIP ) as string;
+
 
 			_newSyncShooter = new NewSyncShooter.NewSyncShooter();
 			_newSyncShooter.Initialize( "syncshooterDefs.json" );
@@ -198,8 +204,13 @@ namespace TestHostApp2.ViewModels
 
 		~MainWindowViewModel()
 		{
+			string sBaseRegKey = Path.Combine( _registryBaseKey, this.Title.Value );
 			// レジストリにプロジェクト情報を書き込む
-			_project.Save( Path.Combine( _registryBaseKey, this.Title.Value ) );
+			_project.Save( sBaseRegKey );
+			// その他環境変数
+			var regkey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( Path.Combine( sBaseRegKey, "Environment" ) );
+			regkey.SetValue( "LocalHostIP", _localHostIP );
+
 		}
 
 		/// <summary>
@@ -289,7 +300,7 @@ namespace TestHostApp2.ViewModels
 		{
 			var notification = new CameraConnectionNotification { Title = "Camera Connection" };
 			ConnectedIPAddressList.Clear();
-			_newSyncShooter.ConnectCamera().ToList().ForEach( adrs => {
+			_newSyncShooter.ConnectCamera( _localHostIP ).ToList().ForEach( adrs => {
 				ConnectedIPAddressList.Add( adrs );
 				notification.ConnectedItems.Add( adrs );
 			} );
@@ -494,15 +505,18 @@ namespace TestHostApp2.ViewModels
 		void RaiseNetworkSetting()
 		{
 			// TEST
-			var notification = new NetworkSettingNotification { Title = "ネットワークインターフェイス選択" };
+			var notification = new NetworkSettingNotification {
+				Title = "ネットワークインターフェイス選択",
+				LocalHostIP = _localHostIP,
+			};
 			NetworkSettingRequest.Raise( notification );
 			if ( notification.Confirmed ) {
-
-				if ( NetworkInterface.GetIsNetworkAvailable() ) {
-					OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK, "ネットワークに接続されています" );
-				} else {
-					OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK, "ネットワークに接続されていません" );
-				}
+				_localHostIP = notification.LocalHostIP;
+				//if ( NetworkInterface.GetIsNetworkAvailable() ) {
+				//	OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK, "ネットワークに接続されています" );
+				//} else {
+				//	OpenMessageBox( this.Title.Value, MessageBoxImage.Information, MessageBoxButton.OK, MessageBoxResult.OK, "ネットワークに接続されていません" );
+				//}
 			}
 		}
 
@@ -550,14 +564,17 @@ namespace TestHostApp2.ViewModels
 
 				var startInfo = new ProcessStartInfo();
 				startInfo.FileName = "cmd.exe";
-				startInfo.Arguments = "/k ";	// <- 本番は "/c"
-				startInfo.Arguments += @"C:\DN3D\SyncShooter\UserRibbonButtons\button1.bat ";
+				startInfo.WorkingDirectory = @".\UserRibbonButtons";
+				//startInfo.Arguments = "/k ";    // <- 本番は "/c"
+				startInfo.Arguments = "/c ";    // <- 本番は "/c"
+				//startInfo.Arguments += @"C:\DN3D\SyncShooter\UserRibbonButtons\button1.bat ";
+				startInfo.Arguments += @".\button1.bat ";
 				var argString = "\"" + notification.ImageFolderPath + "\" " +
 								"\"" + this.ThreeDDataFolderPath.Value + "\" " +
 								(this.IsCutPetTable.Value ? "yes" : "no");
 				startInfo.Arguments += argString;
 				var proc = Process.Start(startInfo);
-				proc.WaitForExit();
+				//proc.WaitForExit();
 			}
 		}
 
@@ -597,15 +614,18 @@ namespace TestHostApp2.ViewModels
 
 				var startInfo = new ProcessStartInfo();
 				startInfo.FileName = "cmd.exe";
-				startInfo.Arguments = "/k ";    // <- 本番は "/c"
-				startInfo.Arguments += @"C:\DN3D\SyncShooter\UserRibbonButtons\button2.bat ";
+				startInfo.WorkingDirectory = @".\UserRibbonButtons";
+				//startInfo.Arguments = "/k ";    // <- 本番は "/c"
+				startInfo.Arguments = "/c ";    // <- 本番は "/c"
+				//startInfo.Arguments += @"C:\DN3D\SyncShooter\UserRibbonButtons\button2.bat ";
+				startInfo.Arguments += @".\button2.bat ";
 				var argString = "\"" + this.ProjectFolderPath.Value + "\" " +
 								 "\"" + this.ThreeDDataFolderPath.Value + "\" " +
 								(this.IsCutPetTable.Value ? "yes" : "no") + " " +
 								(this.IsSkipAlreadyBuilt.Value ? "skip" : "??");
 				startInfo.Arguments += argString;
 				var proc = Process.Start(startInfo);
-				proc.WaitForExit();
+				//proc.WaitForExit();
 			}
 		}
 
@@ -614,7 +634,9 @@ namespace TestHostApp2.ViewModels
 		/// </summary>
 		void RaiseThreeDBuildingStop()
 		{
-			// unknown
+			// 3Dデータ出力先フォルダに "_stop.txt"　ファイルを置く
+			using ( var sw = new StreamWriter( Path.Combine( this.ThreeDDataFolderPath.Value, "_stop.txt" ) ) ) {
+			}
 		}
 
 		/// <summary>
