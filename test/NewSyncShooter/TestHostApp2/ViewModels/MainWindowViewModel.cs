@@ -665,7 +665,7 @@ namespace TestHostApp2.ViewModels
 					var startInfo = new ProcessStartInfo
 					{
 						FileName = "explorer.exe",
-						Arguments = treeItem._Directory.FullName,
+						Arguments = "\"" + treeItem._Directory.FullName + "\"",
 					};
 					var proc = Process.Start( startInfo );
 					//proc.WaitForExit();

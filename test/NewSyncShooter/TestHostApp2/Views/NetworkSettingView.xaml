@@ -33,7 +33,7 @@
 		</Grid>
 
 		<DataGrid DockPanel.Dock="Top" Height="130" Margin="8" x:Name="DataGrid_Network"
-							AutoGenerateColumns="False" GridLinesVisibility="None"
+							AutoGenerateColumns="False" GridLinesVisibility="None" HeadersVisibility="Column"
 							ItemsSource="{Binding NetworkInfoList}" SelectedIndex="{Binding SelectedIndex.Value}">
 			<DataGrid.Columns>
 				<DataGridTextColumn Header=" " Width="10" IsReadOnly="True" Binding="{Binding Selected}"/>
