@@ -29,7 +29,7 @@ namespace NewSyncShooter
 				listener.Start();
 				var waitTime1 = TimeSpan.FromMilliseconds( 1000 );
 				var waitTime2 = TimeSpan.FromMilliseconds( 100 );
-#if true
+#if false
 				do {
 					var state = new AcceptStateObject() {
 						Listener = listener,
@@ -66,7 +66,7 @@ namespace NewSyncShooter
 					}
 				}
 #endif
-#if false
+#if true
 				do {
 					var state = new AcceptStateObject() {
 						Listener = listener,
