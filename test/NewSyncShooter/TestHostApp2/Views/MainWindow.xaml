@@ -187,7 +187,8 @@
 
 					<ad:LayoutDocumentPane ShowHeader="False">
 						<ad:LayoutDocument x:Name="ViewWindow" Title="View" CanClose="False">
-							<Image Name="PreviewImage" Source="{Binding PreviewingImage.Value}" Width="auto" MinWidth="600"/>
+							<Image Name="PreviewImage" Source="{Binding PreviewingImage.Value}"
+										 Width="auto" MinWidth="600" HorizontalAlignment="Left" VerticalAlignment="Top"/>
 						</ad:LayoutDocument>
 					</ad:LayoutDocumentPane>
 				</ad:LayoutPanel>

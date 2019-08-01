@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Net.NetworkInformation;
@@ -499,7 +500,7 @@ namespace TestHostApp2.ViewModels
 		{
 			var ms = new MemoryStream( data );
 			BitmapSource bitmapSource = BitmapFrame.Create( ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad );
-			this.PreviewingImage.Value = bitmapSource;
+			this.PreviewingImage.Value = new TransformedBitmap( bitmapSource, new RotateTransform( 270 ) );
 		}
 
 		void RaiseNetworkSetting()
