@@ -14,9 +14,9 @@ namespace TestHostApp2.ViewModels
 {
 	public class NetworkInfo
 	{
-		public string Selected { get; set; }		// DataGridで選択されている項目の先頭に"*"を付けたい
-		public string InterfaceName { get; set; }
-		public string IPAddress { get; set; }
+		public ReactiveProperty<string> Selected { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> InterfaceName { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> IPAddress { get; set; } = new ReactiveProperty<string>( string.Empty );
 	}
 
 	public class NetworkSettingViewModel : BindableBase, IInteractionRequestAware
@@ -24,11 +24,11 @@ namespace TestHostApp2.ViewModels
 		public Action FinishInteraction { get; set; }
 		private IConfirmation _notification = null;
 
-		//public List<NetworkInfo> NetworkInfoList { get; set; } = new List<NetworkInfo>();
-		public ReactiveCollection<NetworkInfo> NetworkInfoList { get; set; } = new ReactiveCollection<NetworkInfo>();
-		public ReactiveProperty<int> SelectedIndex { get; set; } = new ReactiveProperty<int>( 0 );
-		public ReactiveProperty<string> InterfaceName { get; set; } = new ReactiveProperty<string>( string.Empty );
-		public ReactiveProperty<string> IPAddress { get; set; } = new ReactiveProperty<string>( string.Empty );
+		public List<NetworkInfo> NetworkInfoList { get; } = new List<NetworkInfo>();
+		//public ReactiveCollection<NetworkInfo> NetworkInfoList { get; set; } = new ReactiveCollection<NetworkInfo>();
+		public ReactiveProperty<int> SelectedIndex { get; } = new ReactiveProperty<int>( 0 );
+		public ReactiveProperty<string> InterfaceName { get; } = new ReactiveProperty<string>( string.Empty );
+		public ReactiveProperty<string> IPAddress { get; } = new ReactiveProperty<string>( string.Empty );
 
 		public DelegateCommand OkCommand { get; private set; }
 		public DelegateCommand CancelCommand { get; private set; }
@@ -39,19 +39,21 @@ namespace TestHostApp2.ViewModels
 		public NetworkSettingViewModel()
 		{
 			collectNetworkInformation();
+
+			// DataGrid の行が選択された時の動作
 			SelectedIndex.Subscribe( idx => {
-				//this.NetworkInfoList.ForEach( info => info.Selected = "" );
+				this.NetworkInfoList.ForEach( info => info.Selected.Value = string.Empty );
 				if ( idx != -1 ) {
-					//this.NetworkInfoList[idx].Selected = "*";
-					this.InterfaceName.Value = this.NetworkInfoList[idx].InterfaceName;
-					this.IPAddress.Value = this.NetworkInfoList[idx].IPAddress;
+					this.NetworkInfoList[idx].Selected.Value = "*";
+					this.InterfaceName.Value = this.NetworkInfoList[idx].InterfaceName.Value;
+					this.IPAddress.Value = this.NetworkInfoList[idx].IPAddress.Value;
 					if ( _notification != null ) {
 						var notification = _notification as NetworkSettingNotification;
 						notification.LocalHostIP = this.IPAddress.Value;
 					}
 				}
-				base.RaisePropertyChanged();
 			} );
+
 			OkCommand = new DelegateCommand( OKInteraction );
 			CancelCommand = new DelegateCommand( CancelInteraction );
 		}
@@ -71,9 +73,12 @@ namespace TestHostApp2.ViewModels
 				}
 				NetworkInfoList.Add( new NetworkInfo
 				{
-					Selected = " ",
-					InterfaceName = nic.Description,
-					IPAddress = IPAddressString,
+					Selected = new ReactiveProperty<string>(" "),
+					InterfaceName = new ReactiveProperty<string>( nic.Description ),
+					IPAddress = new ReactiveProperty<string>( IPAddressString ),
+					//Selected = " ",
+					//InterfaceName = nic.Description,
+					//IPAddress = IPAddressString,
 				} ); ;
 			} );
 		}
@@ -99,7 +104,7 @@ namespace TestHostApp2.ViewModels
 				SetProperty( ref _notification, (IConfirmation) value );
 
 				var notification = _notification as NetworkSettingNotification;
-				this.SelectedIndex.Value = NetworkInfoList.ToList().FindIndex( 0, info => info.IPAddress == notification.LocalHostIP );
+				this.SelectedIndex.Value = NetworkInfoList.ToList().FindIndex( 0, info => info.IPAddress.Value == notification.LocalHostIP );
 			}
 		}
 	}

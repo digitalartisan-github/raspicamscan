@@ -36,9 +36,9 @@
 							AutoGenerateColumns="False" GridLinesVisibility="None" HeadersVisibility="Column"
 							ItemsSource="{Binding NetworkInfoList}" SelectedIndex="{Binding SelectedIndex.Value}">
 			<DataGrid.Columns>
-				<DataGridTextColumn Header=" " Width="10" IsReadOnly="True" Binding="{Binding Selected}"/>
-				<DataGridTextColumn Header="インターフェイス名" Width="300" IsReadOnly="True" Binding="{Binding InterfaceName}"/>
-				<DataGridTextColumn Header="IPアドレス" Width="100" IsReadOnly="True" Binding="{Binding IPAddress}"/>
+				<DataGridTextColumn Header=" " Width="10" IsReadOnly="True" Binding="{Binding Selected.Value}"/>
+				<DataGridTextColumn Header="インターフェイス名" Width="300" IsReadOnly="True" Binding="{Binding InterfaceName.Value}"/>
+				<DataGridTextColumn Header="IPアドレス" Width="100" IsReadOnly="True" Binding="{Binding IPAddress.Value}"/>
 			</DataGrid.Columns>
 		</DataGrid>
 		
