@@ -1,0 +1,16 @@
+﻿<UserControl x:Class="NewSyncShooterApp.Views.CameraConnectionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:prism="http://prismlibrary.com/"
+             prism:ViewModelLocator.AutoWireViewModel="True"
+             Height="auto" Width="250">
+    <StackPanel Margin="4">
+        <Label Margin="4,4,4,0" Content="Connected:"/>
+        <ListBox Name="ListBox_Connected" Height="150" Margin="4" ItemsSource="{Binding Notification.ConnectedItems}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}"/>
+        <Label Margin="4,4,4,0" Content="Not Connected:"/>
+        <ListBox Name="ListBox_NotConnected" Height="150" Margin="4" ItemsSource="{Binding Notification.NotConnectedItems}"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="4">
+            <Button Name="Button_OK" Height="24" Content="OK" Width="48" Margin="4" Command="{Binding OKCommand}" IsDefault="True"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

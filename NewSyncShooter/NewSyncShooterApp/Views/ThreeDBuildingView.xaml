@@ -1,0 +1,56 @@
+﻿<UserControl x:Class="NewSyncShooterApp.Views.ThreeDBuildingView"
+						xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+						xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+						xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+						xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+						xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+						xmlns:dlg="clr-namespace:Ookii.Dialogs.Wpf;assembly=Ookii.Dialogs.Wpf"
+						xmlns:cmDlg="clr-namespace:PrismCommonDialog;assembly=PrismCommonDialogLib"
+						xmlns:prism="http://prismlibrary.com/"             
+						prism:ViewModelLocator.AutoWireViewModel="True"
+						xmlns:local="clr-namespace:NewSyncShooterApp.Views"
+						mc:Ignorable="d" 
+						d:DesignHeight="200" d:DesignWidth="500">
+	
+	<i:Interaction.Triggers>
+		<prism:InteractionRequestTrigger SourceObject="{Binding BrowseFolderRequest}">
+			<cmDlg:PopupCommonDialogAction CommonDialogType="{x:Type dlg:VistaFolderBrowserDialog}" />
+		</prism:InteractionRequestTrigger>
+	</i:Interaction.Triggers>
+
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition/>
+			<RowDefinition/>
+			<RowDefinition/>
+			<RowDefinition/>
+			<RowDefinition/>
+		</Grid.RowDefinitions>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="80"/>
+			<ColumnDefinition/>
+		</Grid.ColumnDefinitions>
+		<Label Grid.Row="0" Grid.Column="0" Content="作成ショット :" Margin="4"/>
+		<TextBox Grid.Row="0" Grid.Column="1" Width="350" Height="24" HorizontalAlignment="Left" Margin="8" IsReadOnly="True" Text="{Binding ImageFolderPath.Value}"/>
+		<Label Grid.Row="1" Grid.Column="0" Content="出力先 :" Margin="4"/>
+		<StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="4">
+			<TextBox Width="350" Height="24" HorizontalAlignment="Left" Margin="4" Text="{Binding ThreeDDataFolderPath.Value}"/>
+			<Button Content="参照" Height="24" Width="48" Margin="4" Command="{Binding BrowseFolderCommand}"/>
+		</StackPanel>
+		<CheckBox Grid.Row="2" Grid.Column="1" VerticalContentAlignment="Center" Content="ペット台の自動カット" Margin="4" IsChecked="{Binding IsCutPetTable.Value}">
+		</CheckBox>
+		<CheckBox Grid.Row="3" Grid.Column="1" VerticalContentAlignment="Center" Content="作成済みのモデルはスキップ" Margin="4" IsChecked="{Binding IsSkipAlreadyBuilt.Value}">
+			<CheckBox.Visibility>
+				<Binding Path="IsEnableSkipAlreadyBuilt.Value">
+					<Binding.Converter>
+						<BooleanToVisibilityConverter/>
+					</Binding.Converter>
+				</Binding>
+			</CheckBox.Visibility>
+		</CheckBox>
+		<StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="4">
+			<Button Content="OK" Width="60" Height="24" Margin="4" IsDefault="True" Command="{Binding OkCommand}"/>
+			<Button Content="キャンセル" Width="60" Height="24" Margin="4" Command="{Binding CancelCommand}"/>
+		</StackPanel>
+	</Grid>
+</UserControl>

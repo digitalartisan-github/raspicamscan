@@ -1,0 +1,31 @@
+﻿<UserControl x:Class="NewSyncShooterApp.Views.CameraCapturingView"
+						xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+						xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+						xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+						xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+						xmlns:prism="http://prismlibrary.com/"
+						prism:ViewModelLocator.AutoWireViewModel="True"
+						xmlns:local="clr-namespace:NewSyncShooterApp.Views"
+						mc:Ignorable="d" 
+						d:DesignHeight="200" d:DesignWidth="400" Loaded="UserControl_Loaded">
+	<Grid FocusManager.FocusedElement="{Binding ElementName=TextBox_Name}">
+		<Grid.RowDefinitions>
+			<RowDefinition/>
+			<RowDefinition/>
+			<RowDefinition/>
+		</Grid.RowDefinitions>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="80"/>
+			<ColumnDefinition/>
+		</Grid.ColumnDefinitions>
+		<Label Grid.Row="0" Grid.Column="0" Content="撮影番号 :" Margin="4" VerticalContentAlignment="Center"/>
+		<TextBox Grid.Row="0" Grid.Column="1" x:Name="TextBox_Name"
+						 Width="250" Height="24" HorizontalAlignment="Left" Margin="4" VerticalContentAlignment="Center"
+						 Text="{Binding CapturingName.Value, UpdateSourceTrigger=PropertyChanged}"/>
+		<Label Grid.Row="1" Grid.Column="1" Content="撮影フォルダ名の最後に ( )付きで追加されます。"/>
+		<StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="4">
+			<Button Content="撮影" Width="60" Height="24" Margin="4" IsDefault="True" Command="{Binding OKCommand}"/>
+			<Button Content="キャンセル" Width="60" Height="24" Margin="4" Command="{Binding CancelCommand}"/>
+		</StackPanel>
+	</Grid>
+</UserControl>
