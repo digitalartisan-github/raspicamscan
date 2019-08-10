@@ -156,8 +156,7 @@ class MutiCastServer (CameraControl ,threading.Thread):
     return ip
 
   def send_string_to_host(self, host_ip ,str):
-      # s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # もとは TCP
-      s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) # UDPに変更
+      s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       s.connect((host_ip, self.SENDBACK_PORT))
       s.send(str.encode('UTF8'));
       s.close()
@@ -329,7 +328,7 @@ mcs.param_apply()
 
 mcs.start()
 sis_list = list()
-for i in range(1):    # 32 -> 1 へ変更
+for i in range(32):
   sis = ShootImageServer()
   sis.setPort(27783+i)
   sis.start()

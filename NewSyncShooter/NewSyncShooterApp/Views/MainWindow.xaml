@@ -169,6 +169,11 @@
 											<Setter Property="ContextMenu" Value="{Binding Source={StaticResource FileViewContextMenu}}"/>
 										</Style>
 									</TreeView.ItemContainerStyle>
+									<i:Interaction.Triggers>
+										<i:EventTrigger EventName="SelectedItemChanged">
+											<prism:InvokeCommandAction Command="{Binding FileViewSelectedItemChanged}" TriggerParameterPath="NewValue"/>
+										</i:EventTrigger>
+									</i:Interaction.Triggers>
 								</TreeView>
 							</ad:LayoutAnchorable>
 							<ad:LayoutAnchorable x:Name="CameraPane" Title="カメラ ビュー" IconSource="Images/camera_15px.png"

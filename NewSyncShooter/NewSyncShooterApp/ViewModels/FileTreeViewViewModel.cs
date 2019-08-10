@@ -18,6 +18,8 @@ namespace NewSyncShooterApp.ViewModels
 		/// <summary>TreeViewItem の元データを取得します。</summary>
 		public object SourceData { get; } = null;
 
+		public ReactiveProperty<string> SelectedValue { get; set; }
+
 		/// <summary>ReactivePropertyのDispose用リスト</summary>
 		private System.Reactive.Disposables.CompositeDisposable disposables = new System.Reactive.Disposables.CompositeDisposable();
 
@@ -28,6 +30,9 @@ namespace NewSyncShooterApp.ViewModels
 			this.Children = new ReactiveCollection<FileTreeViewViewModel>().AddTo( this.disposables );
 
 			this.ItemText = new ReactivePropertySlim<string>( baseFolderPath );
+
+			this.SelectedValue = new ReactiveProperty<string>( string.Empty ).AddTo( this.disposables );
+			this.SelectedValue.Subscribe( v => RaiseSelectedValueChanged( v ) );
 
 			//this.SourceData = treeItem;
 			//switch ( this.SourceData ) {
@@ -54,6 +59,11 @@ namespace NewSyncShooterApp.ViewModels
 			//			.AddTo( this.disposables );
 			//		break;
 			//}
+		}
+
+		private void RaiseSelectedValueChanged( string value )
+		{
+
 		}
 
 		/// <summary>オブジェクトを破棄します。</summary>

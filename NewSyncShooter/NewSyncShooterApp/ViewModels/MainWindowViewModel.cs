@@ -81,6 +81,7 @@ namespace NewSyncShooterApp.ViewModels
 		public ReactiveCommand ThreeDDataFolderOpeningCommand { get; }
 		public ReactiveCommand FileViewOpenFolderCommand { get; }
 		public ReactiveCommand FileViewDeleteFolderCommand { get; }
+		public ReactiveCommand<FileTreeItem> FileViewSelectedItemChanged { get; }
 		public ReactiveCommand CameraViewShowPictureCommand { get; }
 		#endregion
 
@@ -199,6 +200,8 @@ namespace NewSyncShooterApp.ViewModels
 			FileViewOpenFolderCommand.Subscribe( RaiseFileViewOpenFolderCommand );
 			FileViewDeleteFolderCommand = new ReactiveCommand();
 			FileViewDeleteFolderCommand.Subscribe( RaiseFileViewDeleteFolderCommand );
+			FileViewSelectedItemChanged = new ReactiveCommand<FileTreeItem>();
+			FileViewSelectedItemChanged.Subscribe( RaiseFileViewSelectedItemChanged );
 			CameraViewShowPictureCommand = new ReactiveCommand();
 			CameraViewShowPictureCommand.Subscribe( RaiseCameraViewShowPictureCommand );
 		}
@@ -498,9 +501,10 @@ namespace NewSyncShooterApp.ViewModels
 
 		void ShowPreviewImage( byte[] data )
 		{
-			var ms = new MemoryStream( data );
-			BitmapSource bitmapSource = BitmapFrame.Create( ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad );
-			this.PreviewingImage.Value = new TransformedBitmap( bitmapSource, new RotateTransform( 270 ) );
+			using ( var ms = new MemoryStream( data ) ) {
+				BitmapSource bitmapSource = BitmapFrame.Create( ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad );
+				this.PreviewingImage.Value = new TransformedBitmap( bitmapSource, new RotateTransform( 270 ) );
+			}
 		}
 
 		void RaiseNetworkSetting()
@@ -697,6 +701,25 @@ namespace NewSyncShooterApp.ViewModels
 						FileTree.Clear();
 						FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
 					}
+				}
+			}
+		}
+
+		void RaiseFileViewSelectedItemChanged( FileTreeItem item )
+		{
+			var path = item._Directory.FullName;
+			// TODO: このディレクトリ内の最初のIPアドレスの画像をView上に表示する
+			string[] fileNames = Directory.GetFiles( path, "*.jpg" );
+			if ( fileNames.Length > 0 ) {
+				// ファイル名の数値が最小のファイル名を得る
+				var fileName = fileNames.OrderBy( name => {
+					var text = name.Split( new char[] { '\\' } ).Last();
+					text = text.Split( new char[] { '.' } ).First();
+					return int.Parse(text);
+				} ).First();
+				using ( Stream BitmapStream = System.IO.File.Open( fileName, System.IO.FileMode.Open ) ) {
+					BitmapSource bitmapSource = BitmapFrame.Create( BitmapStream, BitmapCreateOptions.None, BitmapCacheOption.OnLoad );
+					this.PreviewingImage.Value = new TransformedBitmap( bitmapSource, new RotateTransform( 270 ) );
 				}
 			}
 		}

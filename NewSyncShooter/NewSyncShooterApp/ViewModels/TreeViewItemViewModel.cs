@@ -45,8 +45,6 @@ namespace NewSyncShooterApp.ViewModels
 					.Select( v => v as string )
 					.ToReadOnlyReactivePropertySlim()
 					.AddTo( this.disposables );
-
-				//if ( s == "身体測定" ) { imageFileName = "physical_folder.png"; } else if ( s == "試験結果" ) { imageFileName = "test_folder.png"; }
 				break;
 			}
 

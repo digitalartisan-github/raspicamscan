@@ -106,7 +106,7 @@ namespace NewSyncShooter
 			}
 			_mcastClient.SendCommand( "INQ" );
 			_mcastClient.Close();
-			System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある
+			//System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある	// →　むしろない方がよい。池尻のPCでは。
 
 			var listener = new AsyncTcpListener();
 			var connectedList = listener.StartListening( localHostIP, SENDBACK_PORT );
