@@ -122,7 +122,7 @@
 				<RibbonApplicationMenu Visibility="Collapsed"/>
 			</Ribbon.ApplicationMenu>
 
-			<RibbonTab Header="詳細">
+			<RibbonTab Header="詳細モード">
 				<RibbonGroup Header="画像フォルダ">
 					<RibbonButton Label="新規" LargeImageSource="Images/add_folder_60px.png" Command="{Binding NewProjectCommand}"/>
 					<RibbonButton Label="開く" LargeImageSource="Images/opened_folder_60px.png" Command="{Binding OpenFolderCommand}"/>
@@ -151,7 +151,10 @@
 					<RibbonButton Label="フォルダを開く" LargeImageSource="Images/user_folder_100px.png" Command="{Binding ThreeDDataFolderOpeningCommand}"/>
 				</RibbonGroup>
 			</RibbonTab>
-			<RibbonTab Header="簡単">
+			<RibbonTab Header="自動モード">
+				<RibbonGroup Header="カメラ">
+					<RibbonButton Label="撮影" LargeImageSource="Images/multiple_cameras_60px.png" Command="{Binding CameraCapturingCommand}"/>
+				</RibbonGroup>
 			</RibbonTab>
 		</Ribbon>
 
