@@ -1,0 +1,25 @@
+﻿<UserControl x:Class="NewSyncShooterApp.Views.AutoModeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+             xmlns:dlg="clr-namespace:Ookii.Dialogs.Wpf;assembly=Ookii.Dialogs.Wpf"
+             xmlns:cmDlg="clr-namespace:PrismCommonDialog;assembly=PrismCommonDialogLib"
+             xmlns:prism="http://prismlibrary.com/"
+             prism:ViewModelLocator.AutoWireViewModel="True"
+             xmlns:local="clr-namespace:NewSyncShooterApp.Views"
+             mc:Ignorable="d" 
+             Height="640" Width="1048"
+             MinHeight="640" MinWidth="1048">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="0.6*"/>
+      <RowDefinition Height="0.2*"/>
+      <RowDefinition Height="0.2*"/>
+    </Grid.RowDefinitions>
+    <Button Grid.Row="0" Content="撮影" Height="200" Width="300" HorizontalAlignment="Center"  VerticalAlignment="Bottom" FontSize="108" Command="{Binding CaptureCommand}"/>
+    <TextBlock Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="10秒後に撮影します" FontSize="36"/>
+    <Button Grid.Row="2" Content="戻る" Width="60" Height="40" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8" IsDefault="True" Command="{Binding OkCommand}"/>
+  </Grid>
+</UserControl>

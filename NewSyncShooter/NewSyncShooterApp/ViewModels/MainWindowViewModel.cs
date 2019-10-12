@@ -46,6 +46,7 @@ namespace NewSyncShooterApp.ViewModels
         public ReactiveProperty<BitmapSource> PreviewingImage { get; } = new ReactiveProperty<BitmapSource>();
         public ObservableCollection<FileTreeItem> FileTree { get; } = new ObservableCollection<FileTreeItem>();
         public ObservableCollection<CameraTreeItem> CameraTree { get; } = new ObservableCollection<CameraTreeItem>();
+        public ReactiveProperty<bool> IsAutoModeSelected { get; } = new ReactiveProperty<bool>();
         #endregion
 
         #region Window Requests
@@ -59,6 +60,7 @@ namespace NewSyncShooterApp.ViewModels
         public InteractionRequest<INotification> NetworkSettingRequest { get; } = new InteractionRequest<INotification>();
         public InteractionRequest<INotification> ThreeDBuildingOneRequest { get; } = new InteractionRequest<INotification>();
         public InteractionRequest<INotification> ThreeDBuildingAllRequest { get; } = new InteractionRequest<INotification>();
+        public InteractionRequest<INotification> AutoModeRequest { get; } = new InteractionRequest<INotification>();
         #endregion
 
         #region Commands
@@ -83,6 +85,7 @@ namespace NewSyncShooterApp.ViewModels
         public ReactiveCommand FileViewDeleteFolderCommand { get; }
         public ReactiveCommand<FileTreeItem> FileViewSelectedItemChanged { get; }
         public ReactiveCommand CameraViewShowPictureCommand { get; }
+        public ReactiveCommand AutoModeCommand { get; }
         #endregion
 
         public void Dispose()
@@ -157,6 +160,7 @@ namespace NewSyncShooterApp.ViewModels
                 }
             } ).ToReadOnlyReactiveProperty();
 
+            // プレビュー開始／終了
             this.IsCameraPreviewing.Subscribe( val =>
             {
                 if ( val ) {
@@ -164,6 +168,16 @@ namespace NewSyncShooterApp.ViewModels
                 } else {
                     _previewingTimer.Stop();
                     this.PreviewingImage.Value = null;
+                }
+            } );
+
+            // 自動モードウインドウを開く
+            this.IsAutoModeSelected.Subscribe( val =>
+            {
+                if ( val ) {
+                    // 自動モードウインドウを開く
+                    this.RaiseAutoMode();
+                    //this.IsAutoModeSelected.Value = false;
                 }
             } );
 
@@ -208,6 +222,8 @@ namespace NewSyncShooterApp.ViewModels
             FileViewSelectedItemChanged.Subscribe( RaiseFileViewSelectedItemChanged );
             CameraViewShowPictureCommand = new ReactiveCommand();
             CameraViewShowPictureCommand.Subscribe( RaiseCameraViewShowPictureCommand );
+            AutoModeCommand = this.IsCameraConnected.CombineLatest( this.ProjectName, ( c, p ) => c && !string.IsNullOrEmpty( p ) ).ToReactiveCommand();
+            AutoModeCommand.Subscribe( RaiseAutoMode );
         }
 
         ~MainWindowViewModel()
@@ -514,7 +530,6 @@ namespace NewSyncShooterApp.ViewModels
 
         void RaiseNetworkSetting()
         {
-            // TEST
             var notification = new NetworkSettingNotification
             {
                 Title = "ネットワークインターフェイス選択",
@@ -713,6 +728,9 @@ namespace NewSyncShooterApp.ViewModels
 
         void RaiseFileViewSelectedItemChanged( FileTreeItem item )
         {
+            if ( item == null ) {
+                return;
+            }
             var path = item._Directory.FullName;
             // TODO: このディレクトリ内の最初のIPアドレスの画像をView上に表示する
             string[] fileNames = Directory.GetFiles( path, "*.jpg" );
@@ -753,6 +771,66 @@ namespace NewSyncShooterApp.ViewModels
                 }
             }
         }
+
+        /// <summary>
+        /// 自動モードウインドウを開く
+        /// </summary>
+        void RaiseAutoMode()
+        {
+            var notification = new AutoModeNotification()
+            {
+                Title = "自動モード",
+                Capture = () => CatureAutomatically(),
+            };
+            AutoModeRequest.Raise( notification );
+            if ( notification.Confirmed ) {
+            }
+        }
+
+        /// <summary>
+        /// 自動撮影を行う
+        /// </summary>
+        void CatureAutomatically()
+        {
+            // プレビュー中なら停止する
+            IsCameraPreviewing.Value = false;
+
+            try {
+                // 現在のプロジェクトフォルダ内で、"Auto" で始まるフォルダ一覧を取得する
+                // それらがある場合は、その最後の番号を、新規作成フォルダの番号とする
+                // ない場合は "Auto0000" とする
+                var directories = Directory.GetDirectories( this.ProjectFolderPath.Value );
+                int nMaxIndex;
+                if ( directories.Length == 0 ) {
+                    nMaxIndex = 0;
+                } else {
+                    nMaxIndex = directories
+                                .Select( dir => Path.GetFileName( dir ).ToUpper() )
+                                .Where( dir => dir.StartsWith( "AUTO" ) )
+                                .Max( dir => int.Parse( dir.Remove( 0, 4 ) ) );
+                }
+                string sTargetName = String.Format("Auto{0:0000}", nMaxIndex + 1);
+                string sTargetDir = Path.Combine( this.ProjectFolderPath.Value, sTargetName );
+                Directory.CreateDirectory( sTargetDir );
+
+                // カメラ画像転送ダイアログを開く
+                var notification2 = new ImagTransferingNotification()
+                {
+                    Title = "カメラ画像転送",
+                    SyncShooter = _newSyncShooter,
+                    ConnectedIPAddressList = ConnectedIPAddressList,
+                    TargetDir = sTargetDir,
+                };
+                this.ImageTransferingRequest.Raise( notification2 );
+
+                // 「ファイルビュー」表示を更新
+                FileTree.Clear();
+                FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
+
+            } catch ( Exception e ) {
+                OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
+            }
+        }
+
     }
 }
-

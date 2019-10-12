@@ -106,6 +106,14 @@
       </prism:PopupWindowAction>
     </prism:InteractionRequestTrigger>
 
+    <prism:InteractionRequestTrigger SourceObject="{Binding AutoModeRequest}">
+      <prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+        <prism:PopupWindowAction.WindowContent>
+          <views:AutoModeView />
+        </prism:PopupWindowAction.WindowContent>
+      </prism:PopupWindowAction>
+    </prism:InteractionRequestTrigger>
+
   </i:Interaction.Triggers>
 
   <DockPanel>
@@ -150,12 +158,15 @@
           <RibbonButton Label="作成中断" LargeImageSource="Images/remove_user_male_60px.png" Command="{Binding ThreeDBuildingStopCommand}"/>
           <RibbonButton Label="フォルダを開く" LargeImageSource="Images/user_folder_100px.png" Command="{Binding ThreeDDataFolderOpeningCommand}"/>
         </RibbonGroup>
+        <RibbonGroup Header="自動モード">
+          <RibbonButton Label="自動モード" LargeImageSource="Images/nui2_60px.png" Command="{Binding AutoModeCommand}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+        </RibbonGroup>
       </RibbonTab>
-      <RibbonTab Header="自動モード">
+      <!--<RibbonTab Header="自動モード" IsSelected="{Binding IsAutoModeSelected.Value}" IsEnabled="{Binding IsCameraConnected.Value}">
         <RibbonGroup Header="カメラ">
           <RibbonButton Label="撮影" LargeImageSource="Images/multiple_cameras_60px.png" Command="{Binding CameraCapturingCommand}"/>
         </RibbonGroup>
-      </RibbonTab>
+      </RibbonTab>-->
     </Ribbon>
 
     <ad:DockingManager x:Name="_dockingManager" DockPanel.Dock="Left">

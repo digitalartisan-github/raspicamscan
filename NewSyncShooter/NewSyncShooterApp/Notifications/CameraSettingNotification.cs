@@ -1,6 +1,5 @@
 ﻿using System;
 using Prism.Interactivity.InteractionRequest;
-using System.Collections.Generic;
 using NewSyncShooter;
 
 namespace NewSyncShooterApp.Notifications

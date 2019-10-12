@@ -59,6 +59,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Notifications\AutoModeNotification.cs" />
+    <Compile Include="ViewModels\AutoModeViewModel.cs" />
+    <Compile Include="Views\AutoModeView.xaml.cs">
+      <DependentUpon>AutoModeView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\MessageBoxAction.cs" />
     <Compile Include="Views\NavigationTree.xaml.cs">
       <DependentUpon>NavigationTree.xaml</DependentUpon>
@@ -73,6 +78,10 @@
       <DependentUpon>ThreeDBuildingView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\TreeViewExtension.cs" />
+    <Page Include="Views\AutoModeView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\CameraCapturingView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -231,6 +240,9 @@
     <Resource Include="Views\Images\sophia_loren_60px.png" />
     <Resource Include="Views\Images\switch_camera_60px.png" />
     <Resource Include="Views\Images\user_folder_100px.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Views\Images\nui2_60px.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
