@@ -15,14 +15,14 @@ using System.Windows.Shapes;
 
 namespace NewSyncShooterApp.Views
 {
-	/// <summary>
-	/// CameraTransferingView.xaml の相互作用ロジック
-	/// </summary>
-	public partial class ImageTransferingView : UserControl
-	{
-		public ImageTransferingView()
-		{
-			InitializeComponent();
-		}
-	}
+    /// <summary>
+    /// CameraTransferingView.xaml の相互作用ロジック
+    /// </summary>
+    public partial class ImageTransferingView : UserControl
+    {
+        public ImageTransferingView()
+        {
+            InitializeComponent();
+        }
+    }
 }

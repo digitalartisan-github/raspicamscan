@@ -2,10 +2,10 @@
 
 namespace NewSyncShooterApp.Notifications
 {
-	public class ClosingNotificaton : Confirmation
-	{
-		public ClosingNotificaton()
-		{
-		}
-	}
+    public class ClosingNotificaton : Confirmation
+    {
+        public ClosingNotificaton()
+        {
+        }
+    }
 }

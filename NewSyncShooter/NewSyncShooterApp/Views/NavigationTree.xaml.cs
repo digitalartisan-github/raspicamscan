@@ -15,14 +15,14 @@ using System.Windows.Shapes;
 
 namespace NewSyncShooterApp.Views
 {
-	/// <summary>
-	/// NavigationTree.xaml の相互作用ロジック
-	/// </summary>
-	public partial class NavigationTree : UserControl
-	{
-		public NavigationTree()
-		{
-			InitializeComponent();
-		}
-	}
+    /// <summary>
+    /// NavigationTree.xaml の相互作用ロジック
+    /// </summary>
+    public partial class NavigationTree : UserControl
+    {
+        public NavigationTree()
+        {
+            InitializeComponent();
+        }
+    }
 }

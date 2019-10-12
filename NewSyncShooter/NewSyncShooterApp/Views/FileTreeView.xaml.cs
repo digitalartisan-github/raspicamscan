@@ -15,14 +15,14 @@ using System.Windows.Shapes;
 
 namespace NewSyncShooterApp.Views
 {
-	/// <summary>
-	/// FileTreeView.xaml の相互作用ロジック
-	/// </summary>
-	public partial class FileTreeView : UserControl
-	{
-		public FileTreeView()
-		{
-			InitializeComponent();
-		}
-	}
+    /// <summary>
+    /// FileTreeView.xaml の相互作用ロジック
+    /// </summary>
+    public partial class FileTreeView : UserControl
+    {
+        public FileTreeView()
+        {
+            InitializeComponent();
+        }
+    }
 }

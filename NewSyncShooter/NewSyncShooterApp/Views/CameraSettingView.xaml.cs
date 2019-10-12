@@ -15,14 +15,14 @@ using System.Windows.Shapes;
 
 namespace NewSyncShooterApp.Views
 {
-	/// <summary>
-	/// CameraSettingView.xaml の相互作用ロジック
-	/// </summary>
-	public partial class CameraSettingView : UserControl
-	{
-		public CameraSettingView()
-		{
-			InitializeComponent();
-		}
-	}
+    /// <summary>
+    /// CameraSettingView.xaml の相互作用ロジック
+    /// </summary>
+    public partial class CameraSettingView : UserControl
+    {
+        public CameraSettingView()
+        {
+            InitializeComponent();
+        }
+    }
 }

@@ -2,12 +2,12 @@
 
 namespace NewSyncShooterApp.Notifications
 {
-	public class NetworkSettingNotification : Confirmation
-	{
-		public string LocalHostIP { get; set; }
+    public class NetworkSettingNotification : Confirmation
+    {
+        public string LocalHostIP { get; set; }
 
-		public NetworkSettingNotification()
-		{
-		}
-	}
+        public NetworkSettingNotification()
+        {
+        }
+    }
 }

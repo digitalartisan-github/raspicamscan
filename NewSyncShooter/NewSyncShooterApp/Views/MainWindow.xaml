@@ -1,209 +1,209 @@
 ﻿<RibbonWindow x:Class="NewSyncShooterApp.Views.MainWindow"
-							xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-							xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-							xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
-							xmlns:ad="http://schemas.xceed.com/wpf/xaml/avalondock"
-							xmlns:views="clr-namespace:NewSyncShooterApp.Views"
-							xmlns:vm="clr-namespace:NewSyncShooterApp.ViewModels"
-							xmlns:prism="http://prismlibrary.com/"
-							xmlns:dlg="clr-namespace:Ookii.Dialogs.Wpf;assembly=Ookii.Dialogs.Wpf"
-							xmlns:cmDlg="clr-namespace:PrismCommonDialog;assembly=PrismCommonDialogLib"
-							prism:ViewModelLocator.AutoWireViewModel="True"
-							Title="{Binding Title.Value}" Height="640" Width="1048">
+              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+              xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+              xmlns:ad="http://schemas.xceed.com/wpf/xaml/avalondock"
+              xmlns:views="clr-namespace:NewSyncShooterApp.Views"
+              xmlns:vm="clr-namespace:NewSyncShooterApp.ViewModels"
+              xmlns:prism="http://prismlibrary.com/"
+              xmlns:dlg="clr-namespace:Ookii.Dialogs.Wpf;assembly=Ookii.Dialogs.Wpf"
+              xmlns:cmDlg="clr-namespace:PrismCommonDialog;assembly=PrismCommonDialogLib"
+              prism:ViewModelLocator.AutoWireViewModel="True"
+              Title="{Binding Title.Value}" Height="640" Width="1048">
 
-	<RibbonWindow.Resources>
-		<ContextMenu x:Key="FileViewContextMenu">
-			<MenuItem Header="フォルダを開く"
-								Command="{Binding Path=PlacementTarget.Tag.FileViewOpenFolderCommand,
-												RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-								CommandParameter="{Binding Path=PlacementTarget.DataContext,
-												RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
-			<MenuItem Header="フォルダを削除"
-								Command="{Binding Path=PlacementTarget.Tag.FileViewDeleteFolderCommand,
-												RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-								CommandParameter="{Binding Path=PlacementTarget.DataContext,
-												RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
-		</ContextMenu>
-		<ContextMenu x:Key="CameraViewContextMenu">
-			<MenuItem Header="プレビュー"
-								Command="{Binding Path=PlacementTarget.Tag.CameraViewShowPictureCommand,
-												RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-								CommandParameter="{Binding Path=PlacementTarget.DataContext,
-												RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
-		</ContextMenu>
-	</RibbonWindow.Resources>
+  <RibbonWindow.Resources>
+    <ContextMenu x:Key="FileViewContextMenu">
+      <MenuItem Header="フォルダを開く"
+                Command="{Binding Path=PlacementTarget.Tag.FileViewOpenFolderCommand,
+                        RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                CommandParameter="{Binding Path=PlacementTarget.DataContext,
+                        RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
+      <MenuItem Header="フォルダを削除"
+                Command="{Binding Path=PlacementTarget.Tag.FileViewDeleteFolderCommand,
+                        RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                CommandParameter="{Binding Path=PlacementTarget.DataContext,
+                        RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
+    </ContextMenu>
+    <ContextMenu x:Key="CameraViewContextMenu">
+      <MenuItem Header="プレビュー"
+                Command="{Binding Path=PlacementTarget.Tag.CameraViewShowPictureCommand,
+                        RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                CommandParameter="{Binding Path=PlacementTarget.DataContext,
+                        RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
+    </ContextMenu>
+  </RibbonWindow.Resources>
 
-	<i:Interaction.Triggers>
-		<prism:InteractionRequestTrigger SourceObject="{Binding OpenFolderRequest}">
-			<cmDlg:PopupCommonDialogAction CommonDialogType="{x:Type dlg:VistaFolderBrowserDialog}" />
-		</prism:InteractionRequestTrigger>
+  <i:Interaction.Triggers>
+    <prism:InteractionRequestTrigger SourceObject="{Binding OpenFolderRequest}">
+      <cmDlg:PopupCommonDialogAction CommonDialogType="{x:Type dlg:VistaFolderBrowserDialog}" />
+    </prism:InteractionRequestTrigger>
 
-		<prism:InteractionRequestTrigger SourceObject="{Binding OpenMessageBoxRequest, Mode=OneWay}">
-			<views:MessageBoxAction/>
-		</prism:InteractionRequestTrigger>
-		
-		<prism:InteractionRequestTrigger SourceObject="{Binding NewProjectRequest}">
-			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
-				<prism:PopupWindowAction.WindowContent>
-					<views:NewProjectView />
-				</prism:PopupWindowAction.WindowContent>
-			</prism:PopupWindowAction>
-		</prism:InteractionRequestTrigger>
+    <prism:InteractionRequestTrigger SourceObject="{Binding OpenMessageBoxRequest, Mode=OneWay}">
+      <views:MessageBoxAction/>
+    </prism:InteractionRequestTrigger>
+    
+    <prism:InteractionRequestTrigger SourceObject="{Binding NewProjectRequest}">
+      <prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+        <prism:PopupWindowAction.WindowContent>
+          <views:NewProjectView />
+        </prism:PopupWindowAction.WindowContent>
+      </prism:PopupWindowAction>
+    </prism:InteractionRequestTrigger>
 
-		<prism:InteractionRequestTrigger SourceObject="{Binding CameraConnectionRequest}">
-			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
-				<prism:PopupWindowAction.WindowContent>
-					<views:CameraConnectionView />
-				</prism:PopupWindowAction.WindowContent>
-			</prism:PopupWindowAction>
-		</prism:InteractionRequestTrigger>
+    <prism:InteractionRequestTrigger SourceObject="{Binding CameraConnectionRequest}">
+      <prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+        <prism:PopupWindowAction.WindowContent>
+          <views:CameraConnectionView />
+        </prism:PopupWindowAction.WindowContent>
+      </prism:PopupWindowAction>
+    </prism:InteractionRequestTrigger>
 
-		<prism:InteractionRequestTrigger SourceObject="{Binding CameraSettingRequest}">
-			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
-				<prism:PopupWindowAction.WindowContent>
-					<views:CameraSettingView />
-				</prism:PopupWindowAction.WindowContent>
-			</prism:PopupWindowAction>
-		</prism:InteractionRequestTrigger>
+    <prism:InteractionRequestTrigger SourceObject="{Binding CameraSettingRequest}">
+      <prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+        <prism:PopupWindowAction.WindowContent>
+          <views:CameraSettingView />
+        </prism:PopupWindowAction.WindowContent>
+      </prism:PopupWindowAction>
+    </prism:InteractionRequestTrigger>
 
-		<prism:InteractionRequestTrigger SourceObject="{Binding CameraCapturingRequest}">
-			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
-				<prism:PopupWindowAction.WindowContent>
-					<views:CameraCapturingView />
-				</prism:PopupWindowAction.WindowContent>
-			</prism:PopupWindowAction>
-		</prism:InteractionRequestTrigger>
+    <prism:InteractionRequestTrigger SourceObject="{Binding CameraCapturingRequest}">
+      <prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+        <prism:PopupWindowAction.WindowContent>
+          <views:CameraCapturingView />
+        </prism:PopupWindowAction.WindowContent>
+      </prism:PopupWindowAction>
+    </prism:InteractionRequestTrigger>
 
-		<prism:InteractionRequestTrigger SourceObject="{Binding ImageTransferingRequest}">
-			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
-				<prism:PopupWindowAction.WindowContent>
-					<views:ImageTransferingView />
-				</prism:PopupWindowAction.WindowContent>
-			</prism:PopupWindowAction>
-		</prism:InteractionRequestTrigger>
+    <prism:InteractionRequestTrigger SourceObject="{Binding ImageTransferingRequest}">
+      <prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+        <prism:PopupWindowAction.WindowContent>
+          <views:ImageTransferingView />
+        </prism:PopupWindowAction.WindowContent>
+      </prism:PopupWindowAction>
+    </prism:InteractionRequestTrigger>
 
-		<prism:InteractionRequestTrigger SourceObject="{Binding NetworkSettingRequest}">
-			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
-				<prism:PopupWindowAction.WindowContent>
-					<views:NetworkSettingView />
-				</prism:PopupWindowAction.WindowContent>
-			</prism:PopupWindowAction>
-		</prism:InteractionRequestTrigger>
+    <prism:InteractionRequestTrigger SourceObject="{Binding NetworkSettingRequest}">
+      <prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+        <prism:PopupWindowAction.WindowContent>
+          <views:NetworkSettingView />
+        </prism:PopupWindowAction.WindowContent>
+      </prism:PopupWindowAction>
+    </prism:InteractionRequestTrigger>
 
-		<prism:InteractionRequestTrigger SourceObject="{Binding ThreeDBuildingOneRequest}">
-			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
-				<prism:PopupWindowAction.WindowContent>
-					<views:ThreeDBuildingView />
-				</prism:PopupWindowAction.WindowContent>
-			</prism:PopupWindowAction>
-		</prism:InteractionRequestTrigger>
+    <prism:InteractionRequestTrigger SourceObject="{Binding ThreeDBuildingOneRequest}">
+      <prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+        <prism:PopupWindowAction.WindowContent>
+          <views:ThreeDBuildingView />
+        </prism:PopupWindowAction.WindowContent>
+      </prism:PopupWindowAction>
+    </prism:InteractionRequestTrigger>
 
-		<prism:InteractionRequestTrigger SourceObject="{Binding ThreeDBuildingAllRequest}">
-			<prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
-				<prism:PopupWindowAction.WindowContent>
-					<views:ThreeDBuildingView />
-				</prism:PopupWindowAction.WindowContent>
-			</prism:PopupWindowAction>
-		</prism:InteractionRequestTrigger>
+    <prism:InteractionRequestTrigger SourceObject="{Binding ThreeDBuildingAllRequest}">
+      <prism:PopupWindowAction IsModal="True" CenterOverAssociatedObject="True">
+        <prism:PopupWindowAction.WindowContent>
+          <views:ThreeDBuildingView />
+        </prism:PopupWindowAction.WindowContent>
+      </prism:PopupWindowAction>
+    </prism:InteractionRequestTrigger>
 
-	</i:Interaction.Triggers>
+  </i:Interaction.Triggers>
 
-	<DockPanel>
-		<Ribbon x:Name="Ribbon1" DockPanel.Dock="Top">
-			<Ribbon.QuickAccessToolBar>
-				<RibbonQuickAccessToolBar>
-					<!--<RibbonButton x:Name ="Save" SmallImageSource="images/Save_16x.png" Command="{Binding Path=SaveCommand}" ToolTip="保存"/>
-					<RibbonButton x:Name ="Undo" SmallImageSource="images/Undo_grey_16x.png" Command="{x:Static m:Commands.Undo}" ToolTip="元に戻す"/>
-					<RibbonButton x:Name ="Redo" SmallImageSource="images/Redo_grey_16x.png" Command="{x:Static m:Commands.Redo}" ToolTip="やり直し"/>-->
-				</RibbonQuickAccessToolBar>
-			</Ribbon.QuickAccessToolBar>
+  <DockPanel>
+    <Ribbon x:Name="Ribbon1" DockPanel.Dock="Top">
+      <Ribbon.QuickAccessToolBar>
+        <RibbonQuickAccessToolBar>
+          <!--<RibbonButton x:Name ="Save" SmallImageSource="images/Save_16x.png" Command="{Binding Path=SaveCommand}" ToolTip="保存"/>
+          <RibbonButton x:Name ="Undo" SmallImageSource="images/Undo_grey_16x.png" Command="{x:Static m:Commands.Undo}" ToolTip="元に戻す"/>
+          <RibbonButton x:Name ="Redo" SmallImageSource="images/Redo_grey_16x.png" Command="{x:Static m:Commands.Redo}" ToolTip="やり直し"/>-->
+        </RibbonQuickAccessToolBar>
+      </Ribbon.QuickAccessToolBar>
 
-			<Ribbon.ApplicationMenu>
-				<RibbonApplicationMenu Visibility="Collapsed"/>
-			</Ribbon.ApplicationMenu>
+      <Ribbon.ApplicationMenu>
+        <RibbonApplicationMenu Visibility="Collapsed"/>
+      </Ribbon.ApplicationMenu>
 
-			<RibbonTab Header="詳細モード">
-				<RibbonGroup Header="画像フォルダ">
-					<RibbonButton Label="新規" LargeImageSource="Images/add_folder_60px.png" Command="{Binding NewProjectCommand}"/>
-					<RibbonButton Label="開く" LargeImageSource="Images/opened_folder_60px.png" Command="{Binding OpenFolderCommand}"/>
-				</RibbonGroup>
-				<RibbonGroup Header="カメラ">
-					<RibbonButton Label="検索" LargeImageSource="Images/camera_identification_60px.png" Command="{Binding CameraConnectionCommand}"/>
-					<RibbonToggleButton Label="プレビュー" LargeImageSource="Images/screenshot_60px.png" IsChecked="{Binding IsCameraPreviewing.Value}" IsEnabled="{Binding IsCameraConnected.Value}"/>
-					<RibbonButton Label="設定" LargeImageSource="Images/settings_60px.png" Command="{Binding CameraSettingCommand}"/>
-					<RibbonButton Label="撮影" LargeImageSource="Images/multiple_cameras_60px.png" Command="{Binding CameraCapturingCommand}"/>
-					<RibbonButton Label="停止" LargeImageSource="Images/no_camera_60px.png" Command="{Binding CameraStopCommand}"/>
-					<RibbonButton Label="再起動" LargeImageSource="Images/switch_camera_60px.png" Command="{Binding CameraRebootCommand}"/>
-				</RibbonGroup>
-				<RibbonGroup Header="設定">
-					<RibbonMenuButton Label="表示画像" LargeImageSource="Images/sophia_loren_60px.png" IsEnabled="{Binding IsCameraConnected.Value}">
-						<RibbonButton Label="正面カメラ" Command="{Binding CameraFrontCommand}"/>
-						<RibbonButton Label="背面カメラ" Command="{Binding CameraBackCommand}"/>
-						<RibbonButton Label="右側カメラ" Command="{Binding CameraRightCommand}"/>
-						<RibbonButton Label="左側カメラ" Command="{Binding CameraLeftCommand}"/>
-					</RibbonMenuButton>
-					<RibbonButton Label="ネットワーク" LargeImageSource="Images/networking_manager_60px.png" Command="{Binding NetworkSettingCommand}"/>
-				</RibbonGroup>
-				<RibbonGroup Header="3D作成">
-					<RibbonButton Label="1ショット" LargeImageSource="Images/guest_filled_100px.png" Command="{Binding ThreeDBuildingOneCommand}"/>
-					<RibbonButton Label="全てのショット" LargeImageSource="Images/groups_filled_100px.png" Command="{Binding ThreeDBuildingAllCommand}"/>
-					<RibbonButton Label="作成中断" LargeImageSource="Images/remove_user_male_60px.png" Command="{Binding ThreeDBuildingStopCommand}"/>
-					<RibbonButton Label="フォルダを開く" LargeImageSource="Images/user_folder_100px.png" Command="{Binding ThreeDDataFolderOpeningCommand}"/>
-				</RibbonGroup>
-			</RibbonTab>
-			<RibbonTab Header="自動モード">
-				<RibbonGroup Header="カメラ">
-					<RibbonButton Label="撮影" LargeImageSource="Images/multiple_cameras_60px.png" Command="{Binding CameraCapturingCommand}"/>
-				</RibbonGroup>
-			</RibbonTab>
-		</Ribbon>
+      <RibbonTab Header="詳細モード">
+        <RibbonGroup Header="画像フォルダ">
+          <RibbonButton Label="新規" LargeImageSource="Images/add_folder_60px.png" Command="{Binding NewProjectCommand}"/>
+          <RibbonButton Label="開く" LargeImageSource="Images/opened_folder_60px.png" Command="{Binding OpenFolderCommand}"/>
+        </RibbonGroup>
+        <RibbonGroup Header="カメラ">
+          <RibbonButton Label="検索" LargeImageSource="Images/camera_identification_60px.png" Command="{Binding CameraConnectionCommand}"/>
+          <RibbonToggleButton Label="プレビュー" LargeImageSource="Images/screenshot_60px.png" IsChecked="{Binding IsCameraPreviewing.Value}" IsEnabled="{Binding IsCameraConnected.Value}"/>
+          <RibbonButton Label="設定" LargeImageSource="Images/settings_60px.png" Command="{Binding CameraSettingCommand}"/>
+          <RibbonButton Label="撮影" LargeImageSource="Images/multiple_cameras_60px.png" Command="{Binding CameraCapturingCommand}"/>
+          <RibbonButton Label="停止" LargeImageSource="Images/no_camera_60px.png" Command="{Binding CameraStopCommand}"/>
+          <RibbonButton Label="再起動" LargeImageSource="Images/switch_camera_60px.png" Command="{Binding CameraRebootCommand}"/>
+        </RibbonGroup>
+        <RibbonGroup Header="設定">
+          <RibbonMenuButton Label="表示画像" LargeImageSource="Images/sophia_loren_60px.png" IsEnabled="{Binding IsCameraConnected.Value}">
+            <RibbonButton Label="正面カメラ" Command="{Binding CameraFrontCommand}"/>
+            <RibbonButton Label="背面カメラ" Command="{Binding CameraBackCommand}"/>
+            <RibbonButton Label="右側カメラ" Command="{Binding CameraRightCommand}"/>
+            <RibbonButton Label="左側カメラ" Command="{Binding CameraLeftCommand}"/>
+          </RibbonMenuButton>
+          <RibbonButton Label="ネットワーク" LargeImageSource="Images/networking_manager_60px.png" Command="{Binding NetworkSettingCommand}"/>
+        </RibbonGroup>
+        <RibbonGroup Header="3D作成">
+          <RibbonButton Label="1ショット" LargeImageSource="Images/guest_filled_100px.png" Command="{Binding ThreeDBuildingOneCommand}"/>
+          <RibbonButton Label="全てのショット" LargeImageSource="Images/groups_filled_100px.png" Command="{Binding ThreeDBuildingAllCommand}"/>
+          <RibbonButton Label="作成中断" LargeImageSource="Images/remove_user_male_60px.png" Command="{Binding ThreeDBuildingStopCommand}"/>
+          <RibbonButton Label="フォルダを開く" LargeImageSource="Images/user_folder_100px.png" Command="{Binding ThreeDDataFolderOpeningCommand}"/>
+        </RibbonGroup>
+      </RibbonTab>
+      <RibbonTab Header="自動モード">
+        <RibbonGroup Header="カメラ">
+          <RibbonButton Label="撮影" LargeImageSource="Images/multiple_cameras_60px.png" Command="{Binding CameraCapturingCommand}"/>
+        </RibbonGroup>
+      </RibbonTab>
+    </Ribbon>
 
-		<ad:DockingManager x:Name="_dockingManager" DockPanel.Dock="Left">
-			<ad:LayoutRoot>
-				<ad:LayoutPanel Orientation="Horizontal">
-					<ad:LayoutAnchorablePaneGroup DockWidth="200" Orientation="Vertical">
-						<ad:LayoutAnchorablePane>
-							<ad:LayoutAnchorable x:Name="FolderPane" Title="ファイル ビュー" IconSource="Images/picture_15px.png"
-																	 CanHide="False" CanClose="False" IsSelected="False">
-								<TreeView ItemsSource="{Binding FileTree}" views:TreeViewExtension.SelectItemOnRightClick="True">
-									<TreeView.ItemContainerStyle>
-										<Style TargetType="vm:FileTreeItem">
-											<Setter Property="Tag" Value="{Binding Path=DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type TreeView}}}"/>
-											<Setter Property="ContextMenu" Value="{Binding Source={StaticResource FileViewContextMenu}}"/>
-										</Style>
-									</TreeView.ItemContainerStyle>
-									<i:Interaction.Triggers>
-										<i:EventTrigger EventName="SelectedItemChanged">
-											<prism:InvokeCommandAction Command="{Binding FileViewSelectedItemChanged}" TriggerParameterPath="NewValue"/>
-										</i:EventTrigger>
-									</i:Interaction.Triggers>
-								</TreeView>
-							</ad:LayoutAnchorable>
-							<ad:LayoutAnchorable x:Name="CameraPane" Title="カメラ ビュー" IconSource="Images/camera_15px.png"
-																	 CanHide="False" CanClose="False" IsSelected="True">
-								<TreeView ItemsSource="{Binding CameraTree}" views:TreeViewExtension.SelectItemOnRightClick="True">
-									<TreeView.ItemContainerStyle>
-										<Style TargetType="vm:CameraTreeItem">
-											<Setter Property="Tag" Value="{Binding Path=DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type TreeView}}}"/>
-											<Setter Property="ContextMenu" Value="{Binding Source={StaticResource CameraViewContextMenu}}"/>
-										</Style>
-									</TreeView.ItemContainerStyle>
-								</TreeView>
-							</ad:LayoutAnchorable>
-						</ad:LayoutAnchorablePane>
-					</ad:LayoutAnchorablePaneGroup>
+    <ad:DockingManager x:Name="_dockingManager" DockPanel.Dock="Left">
+      <ad:LayoutRoot>
+        <ad:LayoutPanel Orientation="Horizontal">
+          <ad:LayoutAnchorablePaneGroup DockWidth="200" Orientation="Vertical">
+            <ad:LayoutAnchorablePane>
+              <ad:LayoutAnchorable x:Name="FolderPane" Title="ファイル ビュー" IconSource="Images/picture_15px.png"
+                                   CanHide="False" CanClose="False" IsSelected="False">
+                <TreeView ItemsSource="{Binding FileTree}" views:TreeViewExtension.SelectItemOnRightClick="True">
+                  <TreeView.ItemContainerStyle>
+                    <Style TargetType="vm:FileTreeItem">
+                      <Setter Property="Tag" Value="{Binding Path=DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type TreeView}}}"/>
+                      <Setter Property="ContextMenu" Value="{Binding Source={StaticResource FileViewContextMenu}}"/>
+                    </Style>
+                  </TreeView.ItemContainerStyle>
+                  <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="SelectedItemChanged">
+                      <prism:InvokeCommandAction Command="{Binding FileViewSelectedItemChanged}" TriggerParameterPath="NewValue"/>
+                    </i:EventTrigger>
+                  </i:Interaction.Triggers>
+                </TreeView>
+              </ad:LayoutAnchorable>
+              <ad:LayoutAnchorable x:Name="CameraPane" Title="カメラ ビュー" IconSource="Images/camera_15px.png"
+                                   CanHide="False" CanClose="False" IsSelected="True">
+                <TreeView ItemsSource="{Binding CameraTree}" views:TreeViewExtension.SelectItemOnRightClick="True">
+                  <TreeView.ItemContainerStyle>
+                    <Style TargetType="vm:CameraTreeItem">
+                      <Setter Property="Tag" Value="{Binding Path=DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type TreeView}}}"/>
+                      <Setter Property="ContextMenu" Value="{Binding Source={StaticResource CameraViewContextMenu}}"/>
+                    </Style>
+                  </TreeView.ItemContainerStyle>
+                </TreeView>
+              </ad:LayoutAnchorable>
+            </ad:LayoutAnchorablePane>
+          </ad:LayoutAnchorablePaneGroup>
 
-					<ad:LayoutDocumentPane ShowHeader="False">
-						<ad:LayoutDocument x:Name="ViewWindow" Title="View" CanClose="False">
-							<Image Name="PreviewImage" Source="{Binding PreviewingImage.Value}"
-										 Width="auto" MinWidth="600" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-						</ad:LayoutDocument>
-					</ad:LayoutDocumentPane>
-				</ad:LayoutPanel>
-			</ad:LayoutRoot>
-		</ad:DockingManager>
+          <ad:LayoutDocumentPane ShowHeader="False">
+            <ad:LayoutDocument x:Name="ViewWindow" Title="View" CanClose="False">
+              <Image Name="PreviewImage" Source="{Binding PreviewingImage.Value}"
+                     Width="auto" MinWidth="600" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            </ad:LayoutDocument>
+          </ad:LayoutDocumentPane>
+        </ad:LayoutPanel>
+      </ad:LayoutRoot>
+    </ad:DockingManager>
 
-		<ContentControl prism:RegionManager.RegionName="ContentRegion" />
+    <ContentControl prism:RegionManager.RegionName="ContentRegion" />
 
-	</DockPanel>
+  </DockPanel>
 </RibbonWindow>

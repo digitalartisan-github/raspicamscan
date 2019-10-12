@@ -15,14 +15,14 @@ using System.Windows.Shapes;
 
 namespace NewSyncShooterApp.Views
 {
-	/// <summary>
-	/// ThreeDBuildingView.xaml の相互作用ロジック
-	/// </summary>
-	public partial class ThreeDBuildingView : UserControl
-	{
-		public ThreeDBuildingView()
-		{
-			InitializeComponent();
-		}
-	}
+    /// <summary>
+    /// ThreeDBuildingView.xaml の相互作用ロジック
+    /// </summary>
+    public partial class ThreeDBuildingView : UserControl
+    {
+        public ThreeDBuildingView()
+        {
+            InitializeComponent();
+        }
+    }
 }

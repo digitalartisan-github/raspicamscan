@@ -3,14 +3,14 @@ using System.Windows.Controls;
 
 namespace NewSyncShooterApp.Views
 {
-	/// <summary>
-	/// Interaction logic for CameraConnectionView.xaml
-	/// </summary>
-	public partial class CameraConnectionView : UserControl
-	{
-		public CameraConnectionView()
-		{
-			InitializeComponent();
-		}
-	}
+    /// <summary>
+    /// Interaction logic for CameraConnectionView.xaml
+    /// </summary>
+    public partial class CameraConnectionView : UserControl
+    {
+        public CameraConnectionView()
+        {
+            InitializeComponent();
+        }
+    }
 }

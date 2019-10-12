@@ -15,19 +15,19 @@ using System.Windows.Shapes;
 
 namespace NewSyncShooterApp.Views
 {
-	/// <summary>
-	/// CapturingView.xaml の相互作用ロジック
-	/// </summary>
-	public partial class CameraCapturingView : UserControl
-	{
-		public CameraCapturingView()
-		{
-			InitializeComponent();
-		}
+    /// <summary>
+    /// CapturingView.xaml の相互作用ロジック
+    /// </summary>
+    public partial class CameraCapturingView : UserControl
+    {
+        public CameraCapturingView()
+        {
+            InitializeComponent();
+        }
 
-		private void UserControl_Loaded( object sender, RoutedEventArgs e )
-		{
-			this.TextBox_Name.Focus();
-		}
-	}
+        private void UserControl_Loaded( object sender, RoutedEventArgs e )
+        {
+            this.TextBox_Name.Focus();
+        }
+    }
 }

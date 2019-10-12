@@ -15,19 +15,19 @@ using System.Windows.Shapes;
 
 namespace NewSyncShooterApp.Views
 {
-	/// <summary>
-	/// NetworkSelectionView.xaml の相互作用ロジック
-	/// </summary>
-	public partial class NetworkSettingView : UserControl
-	{
-		public NetworkSettingView()
-		{
-			InitializeComponent();
-		}
+    /// <summary>
+    /// NetworkSelectionView.xaml の相互作用ロジック
+    /// </summary>
+    public partial class NetworkSettingView : UserControl
+    {
+        public NetworkSettingView()
+        {
+            InitializeComponent();
+        }
 
-		private void UserControl_Loaded( object sender, RoutedEventArgs e )
-		{
-			this.DataGrid_Network.Focus();
-		}
-	}
+        private void UserControl_Loaded( object sender, RoutedEventArgs e )
+        {
+            this.DataGrid_Network.Focus();
+        }
+    }
 }
