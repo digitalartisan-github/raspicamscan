@@ -1,6 +1,8 @@
 # raspicamscan
 RaspberryPi Scanner (syncshooter再構築プロジェクト)
 
+"NewSyncShooter" - 新SyncShooter ソリューション
+
 "SyncShooter" - 元のSyncShooter 実行形式など
 
 "test/ConsoleApp1" - SyncShooter再構築のためのテストコード (ConsoleApp)
