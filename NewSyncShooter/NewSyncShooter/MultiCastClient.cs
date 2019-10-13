@@ -14,17 +14,52 @@ namespace NewSyncShooter
             _mcastPoint = null;
         }
 
-        public bool Open()
+        //public bool Open()
+        //{
+        //    try {
+        //        IPAddress mcastGrpAdrs = IPAddress.Parse( _mcastGroup );
+        //        _mcastClient = new UdpClient( _mcastPort, AddressFamily.InterNetwork );
+        //        _mcastPoint = new IPEndPoint( mcastGrpAdrs, _mcastPort );
+        //        _mcastClient.JoinMulticastGroup( mcastGrpAdrs );
+        //    } catch ( Exception e ) {
+        //        Console.Error.WriteLine( e.InnerException );
+        //        return false;
+        //    }
+        //    return true;
+        //}
+
+        public bool Open( string localHostIP )
         {
             try {
-                _mcastClient = new UdpClient();
-                _mcastPoint = new IPEndPoint( IPAddress.Parse( _mcastGroup ), _mcastPort );
-                _mcastClient.JoinMulticastGroup( _mcastPoint.Address );
+                IPEndPoint localEP = new IPEndPoint(IPAddress.Parse(localHostIP), 0);
+                _mcastClient = new UdpClient( localEP );
+                IPAddress mcastGrpAdrs = IPAddress.Parse( _mcastGroup );
+                _mcastPoint = new IPEndPoint( mcastGrpAdrs, _mcastPort );
+                _mcastClient.JoinMulticastGroup( mcastGrpAdrs );
             } catch ( Exception e ) {
                 Console.Error.WriteLine( e.InnerException );
                 return false;
             }
             return true;
+        }
+
+        public bool SendCommandAsync( string cmd )
+        {
+            try {
+                byte[] sendBytes = System.Text.Encoding.UTF8.GetBytes( cmd );
+                _mcastClient.BeginSend( sendBytes, sendBytes.Length, _mcastPoint, SendCallback, _mcastClient );
+            } catch ( Exception e ) {
+                Console.Error.WriteLine( e.InnerException );
+                return false;
+            }
+            return true;
+        }
+
+        static void SendCallback( IAsyncResult ar )
+        {
+            UdpClient u = (UdpClient)ar.AsyncState;
+            Console.WriteLine( $"number of bytes sent: {u.EndSend( ar )}" );
+            u.Close();
         }
 
         public bool SendCommand( string cmd )

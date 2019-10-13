@@ -8,6 +8,7 @@ namespace NewSyncShooterApp.Notifications
     {
         public NewSyncShooter.NewSyncShooter SyncShooter { get; set; }
         public IEnumerable<string> ConnectedIPAddressList { get; set; }
+        public string LocalHostIP { get; set; }
         public string TargetDir { get; set; }
         public BitmapSource Image { get; set; }
 

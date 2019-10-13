@@ -54,6 +54,7 @@ namespace NewSyncShooter
             return GetConnectedHostAddressTCP( localHostIP );
         }
 
+#if false
         // 接続しているラズパイのアドレスを列挙する(UDP Protocol)（アドレスの第4オクテットの昇順でソート）
         private IEnumerable<string> GetConnectedHostAddressUDP()
         {
@@ -97,17 +98,22 @@ namespace NewSyncShooter
             // SyncShooterDefsにある全IPアドレスリストにないものは除く
             .Intersect( _syncshooterDefs.GetAllCameraIPAddress() );
         }
+#endif
 
         // 接続しているラズパイのアドレスを列挙する(TCP Protocol)（アドレスの第4オクテットの昇順でソート）
         public IEnumerable<string> GetConnectedHostAddressTCP( string localHostIP )
         {
             // マルチキャストに参加しているラズパイに"INQ"コマンドを送信
-            if ( _mcastClient.Open() == false ) {
+            if ( _mcastClient.Open( localHostIP ) == false ) {
                 return Array.Empty<string>();
             }
+#if false
+            _mcastClient.SendCommandAsync( "INQ" );
+#else
             _mcastClient.SendCommand( "INQ" );
             _mcastClient.Close();
             //System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある	// →　むしろない方がよい。池尻のPCでは。
+#endif
 
             var listener = new AsyncTcpListener();
             var connectedList = listener.StartListening( localHostIP, SENDBACK_PORT );
@@ -286,9 +292,9 @@ namespace NewSyncShooter
         /// <summary>
         /// 撮影コマンドを全ラズパイカメラへ送信する
         /// </summary>
-        public void SendCommandToGetFullImageInJpeg()
+        public void SendCommandToGetFullImageInJpeg( string localHostIP )
         {
-            if ( _mcastClient.Open() ) {
+            if ( _mcastClient.Open( localHostIP ) ) {
                 _mcastClient.SendCommand( "SHJ" );
                 _mcastClient.Close();
             }
@@ -327,9 +333,9 @@ namespace NewSyncShooter
         /// 入力：reboot : TRUE=再起動, FALSE=停止
         /// </summary>
         /// <param name="reboot"></param>
-        public void StopCamera( bool reboot )
+        public void StopCamera( string localHostIP, bool reboot )
         {
-            if ( _mcastClient.Open() ) {
+            if ( _mcastClient.Open( localHostIP ) ) {
                 _mcastClient.SendCommand( reboot ? "RBT" : "SDW" );
                 _mcastClient.Close();
             }

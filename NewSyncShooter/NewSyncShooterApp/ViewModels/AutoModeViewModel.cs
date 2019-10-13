@@ -33,6 +33,7 @@ namespace NewSyncShooterApp.ViewModels
 
         private void Capture()
         {
+            System.Threading.Thread.Sleep( 10000 );    // wait 10 seconds
             var notification = _notification as AutoModeNotification;
             notification.Capture();
         }

@@ -416,6 +416,7 @@ namespace NewSyncShooterApp.ViewModels
                     Title = "カメラ画像転送",
                     SyncShooter = _newSyncShooter,
                     ConnectedIPAddressList = ConnectedIPAddressList,
+                    LocalHostIP = _localHostIP,
                     TargetDir = sTargetDir,
 					//Image = bitmapSource,
 				};
@@ -446,7 +447,7 @@ namespace NewSyncShooterApp.ViewModels
             if ( OpenMessageBox( this.Title.Value, MessageBoxImage.Question, MessageBoxButton.YesNo, MessageBoxResult.No,
                 "カメラを停止します。よろしいですか？" ) == MessageBoxResult.Yes ) {
                 IsCameraPreviewing.Value = false;
-                _newSyncShooter.StopCamera( false );
+                _newSyncShooter.StopCamera( _localHostIP, false );
                 ConnectedIPAddressList.Clear();
             }
         }
@@ -459,7 +460,7 @@ namespace NewSyncShooterApp.ViewModels
             if ( OpenMessageBox( this.Title.Value, MessageBoxImage.Question, MessageBoxButton.YesNo, MessageBoxResult.No,
                 "カメラを再起動します。よろしいですか？" ) == MessageBoxResult.Yes ) {
                 IsCameraPreviewing.Value = false;
-                _newSyncShooter.StopCamera( true );
+                _newSyncShooter.StopCamera( _localHostIP, true );
                 ConnectedIPAddressList.Clear();
             }
         }
@@ -804,10 +805,14 @@ namespace NewSyncShooterApp.ViewModels
                 if ( directories.Length == 0 ) {
                     nMaxIndex = 0;
                 } else {
-                    nMaxIndex = directories
+                    directories = directories
                                 .Select( dir => Path.GetFileName( dir ).ToUpper() )
-                                .Where( dir => dir.StartsWith( "AUTO" ) )
-                                .Max( dir => int.Parse( dir.Remove( 0, 4 ) ) );
+                                .Where( dir => dir.StartsWith( "AUTO" ) ).ToArray();
+                    if ( directories.Length == 0 ) {
+                        nMaxIndex = 0;
+                    } else {
+                        nMaxIndex = directories.Max( dir => int.Parse( dir.Remove( 0, 4 ) ) );
+                    }
                 }
                 string sTargetName = String.Format("Auto{0:0000}", nMaxIndex + 1);
                 string sTargetDir = Path.Combine( this.ProjectFolderPath.Value, sTargetName );
@@ -819,6 +824,7 @@ namespace NewSyncShooterApp.ViewModels
                     Title = "カメラ画像転送",
                     SyncShooter = _newSyncShooter,
                     ConnectedIPAddressList = ConnectedIPAddressList,
+                    LocalHostIP = _localHostIP,
                     TargetDir = sTargetDir,
                 };
                 this.ImageTransferingRequest.Raise( notification2 );

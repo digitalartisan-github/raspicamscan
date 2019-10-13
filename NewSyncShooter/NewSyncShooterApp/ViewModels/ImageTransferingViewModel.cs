@@ -63,7 +63,7 @@ namespace NewSyncShooterApp.ViewModels
             var notification = _notification as ImagTransferingNotification;
             this.ProgressMaxValue.Value = notification.ConnectedIPAddressList.Count();
             // 撮影コマンドを全ラズパイカメラへ送信する
-            notification.SyncShooter.SendCommandToGetFullImageInJpeg();
+            notification.SyncShooter.SendCommandToGetFullImageInJpeg( notification.LocalHostIP );
             this.ProgressValue.Value = 0;
             this.Information.Value = string.Empty;
             System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある
