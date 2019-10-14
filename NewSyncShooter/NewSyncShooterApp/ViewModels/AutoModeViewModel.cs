@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Net.NetworkInformation;
-using System.Linq;
-using Prism.Commands;
+//using System.Timers;
+using System.Threading;
+using System.Threading.Tasks;
 using Prism.Mvvm;
 using Prism.Interactivity.InteractionRequest;
 using Reactive.Bindings;
-using System.Reactive.Linq;
-using PrismCommonDialog.Confirmations;
 using NewSyncShooterApp.Notifications;
 
 namespace NewSyncShooterApp.ViewModels
@@ -16,26 +13,41 @@ namespace NewSyncShooterApp.ViewModels
     {
         public Action FinishInteraction { get; set; }
         private IConfirmation _notification = null;
+        private SynchronizationContext _mainContext = null;
+        public InteractionRequest<Notification> CloseWindowRequest { get; } = new InteractionRequest<Notification>();
 
+        static readonly int _maxSeconds = 10;
+        public ReactiveProperty<int> RemainingTime { get; } = new ReactiveProperty<int>( _maxSeconds );
         public ReactiveCommand CaptureCommand { get; } = new ReactiveCommand();
         public ReactiveCommand OkCommand { get; } = new ReactiveCommand();
 
         public AutoModeViewModel()
         {
-            CaptureCommand.Subscribe( Capture );
+            CaptureCommand.Subscribe( CaptureInteraction );
             OkCommand.Subscribe( OKInteraction );
-            //OkCommand = new DelegateCommand( OKInteraction );
         }
 
         private void CaptureInteraction()
         {
+            _mainContext = SynchronizationContext.Current;
+            Task tsk = Task.Run( () => CountdownAndCapture() );
         }
 
-        private void Capture()
+        private async Task CountdownAndCapture()
         {
-            System.Threading.Thread.Sleep( 10000 );    // wait 10 seconds
-            var notification = _notification as AutoModeNotification;
-            notification.Capture();
+            await Task.Factory.StartNew( () =>
+            {
+                RemainingTime.Value = _maxSeconds;
+                while ( --RemainingTime.Value > 0 ) {
+                    Task.Delay( 1000 ).Wait();
+                }
+            } );
+            _mainContext.Post(_ =>
+            {
+                var notification = _notification as AutoModeNotification;
+                notification.Capture();
+                RemainingTime.Value = _maxSeconds;
+            }, null );
         }
 
         private void OKInteraction()

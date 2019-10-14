@@ -100,20 +100,20 @@ namespace NewSyncShooter
         }
 #endif
 
-        // 接続しているラズパイのアドレスを列挙する(TCP Protocol)（アドレスの第4オクテットの昇順でソート）
+        /// <summary>
+        /// 接続しているラズパイのアドレスを列挙する(TCP Protocol)（アドレスの第4オクテットの昇順でソート）
+        /// </summary>
+        /// <param name="localHostIP"></param>
+        /// <returns></returns>
         public IEnumerable<string> GetConnectedHostAddressTCP( string localHostIP )
         {
             // マルチキャストに参加しているラズパイに"INQ"コマンドを送信
             if ( _mcastClient.Open( localHostIP ) == false ) {
                 return Array.Empty<string>();
             }
-#if false
-            _mcastClient.SendCommandAsync( "INQ" );
-#else
             _mcastClient.SendCommand( "INQ" );
             _mcastClient.Close();
-            //System.Threading.Thread.Sleep( 1000 );  // waitをおかないと、この後すぐに返事を受け取れない場合がある	// →　むしろない方がよい。池尻のPCでは。
-#endif
+            System.Threading.Thread.Sleep(1000);  // waitをおかないと、この後すぐに返事を受け取れない場合がある?
 
             var listener = new AsyncTcpListener();
             var connectedList = listener.StartListening( localHostIP, SENDBACK_PORT );
@@ -311,8 +311,14 @@ namespace NewSyncShooter
         public static byte[] GetFullImageInJpeg( string ipAddress, out int portNo )
         {
             byte[] imageData = null;
-            portNo = SHOOTIMAGESERVER_PORT;
-            int offset = 0;
+
+            // ポート番号を、IPアドレスの第4オクテットの数値によって SHOOTIMAGESERVER_PORT_NUM の範囲で変更する
+            int idx = ipAddress.LastIndexOf('.');
+            int adrs4th = int.Parse(ipAddress.Substring( idx  + 1 ));
+            int offset = adrs4th % SHOOTIMAGESERVER_PORT_NUM;
+            portNo = SHOOTIMAGESERVER_PORT + offset;
+            //System.Diagnostics.Debug.WriteLine( "{0}", portNo );
+
             while ( true ) {
                 var receiver = new AsyncImageReceiver();
                 imageData = receiver.ReceiveImage( ipAddress, portNo );

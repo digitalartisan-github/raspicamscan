@@ -28,6 +28,11 @@ namespace NewSyncShooter
         //    return true;
         //}
 
+        /// <summary>
+        /// UDPマルチキャスト通信を開く
+        /// </summary>
+        /// <param name="localHostIP">マルチキャスト送信を行うネットワークアダプタ上の自身のIPアドレス</param>
+        /// <returns></returns>
         public bool Open( string localHostIP )
         {
             try {
@@ -43,6 +48,7 @@ namespace NewSyncShooter
             return true;
         }
 
+#if false
         public bool SendCommandAsync( string cmd )
         {
             try {
@@ -61,7 +67,13 @@ namespace NewSyncShooter
             Console.WriteLine( $"number of bytes sent: {u.EndSend( ar )}" );
             u.Close();
         }
+#endif
 
+        /// <summary>
+        /// コマンド文字列を送信する
+        /// </summary>
+        /// <param name="cmd">コマンド文字列</param>
+        /// <returns></returns>
         public bool SendCommand( string cmd )
         {
             try {
@@ -74,6 +86,9 @@ namespace NewSyncShooter
             return true;
         }
 
+        /// <summary>
+        /// マルチキャスト通信を閉じる
+        /// </summary>
         public void Close()
         {
             _mcastClient.Close();

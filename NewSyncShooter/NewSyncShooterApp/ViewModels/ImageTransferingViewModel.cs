@@ -72,14 +72,13 @@ namespace NewSyncShooterApp.ViewModels
             {
                 int progressCount = 0;
                 try {
-                    //object o = new object();
+                    object o = new object();
                     notification.ConnectedIPAddressList.AsParallel().WithCancellation( token ).ForAll( ipAddress =>
                     {
                         //notification.ConnectedIPAddressList.ToList().ForEach( ipAddress => {
                         // 画像を撮影＆取得
                         //System.Diagnostics.Debug.WriteLine( ipAddress );
                         byte[] data = NewSyncShooter.NewSyncShooter.GetFullImageInJpeg( ipAddress, out int portNo );
-                        //System.Diagnostics.Debug.WriteLine( ipAddress + ":{0}", portNo );
                         if ( ( data != null ) && ( data.Length > 0 ) ) {
                             // IP Address の第4オクテットのファイル名で保存する
                             int idx = ipAddress.LastIndexOf('.');
@@ -88,10 +87,10 @@ namespace NewSyncShooterApp.ViewModels
                             using ( var fs = new FileStream( path, FileMode.Create, FileAccess.Write ) ) {
                                 fs.Write( data, 0, data.Length );
                             }
-                            //lock ( o ) {
-                            this.Information.Value = string.Format( "{0}:{1} received.", ipAddress, portNo );
-                            this.ProgressValue.Value = ++progressCount;
-                            //}
+                            lock ( o ) {
+                                this.Information.Value = string.Format( "{0}:{1} received.", ipAddress, portNo );
+                                this.ProgressValue.Value = ++progressCount;
+                            }
                         }
                     } );
                 } catch ( OperationCanceledException ex ) {

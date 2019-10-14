@@ -17,14 +17,14 @@ namespace NewSyncShooter
 
     public class AsyncTcpListener
     {
-        static readonly TimeSpan _waitTime1 = TimeSpan.FromMilliseconds( 10000 );
+        static readonly TimeSpan _waitTime1 = TimeSpan.FromMilliseconds( 5000 );
         static readonly TimeSpan _waitTime2 = TimeSpan.FromMilliseconds( 50 );
         static readonly ManualResetEvent _tcpClientConnected = new ManualResetEvent(false);
 
         // Accept one client connection asynchronously.
         public IEnumerable<string> StartListening( string localHostIP, int portNo )
         {
-            TcpListener listener = new TcpListener( IPAddress.Parse( localHostIP ), portNo );
+            TcpListener listener = new TcpListener(IPAddress.Parse(localHostIP), portNo);
             //TcpListener listener = new TcpListener( IPAddress.Any, portNo );
             List<string> connectedList = new List<string>();
             try {

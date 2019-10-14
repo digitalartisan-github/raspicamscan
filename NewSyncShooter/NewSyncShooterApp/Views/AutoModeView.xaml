@@ -19,7 +19,10 @@
       <RowDefinition Height="0.2*"/>
     </Grid.RowDefinitions>
     <Button Grid.Row="0" Content="撮影" Height="200" Width="300" HorizontalAlignment="Center"  VerticalAlignment="Bottom" FontSize="108" Command="{Binding CaptureCommand}"/>
-    <TextBlock Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="10秒後に撮影します" FontSize="36"/>
-    <Button Grid.Row="2" Content="戻る" Width="60" Height="40" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8" IsDefault="True" Command="{Binding OkCommand}"/>
+    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+      <Label FontSize="36" Width="60" HorizontalContentAlignment="Right" Content="{Binding RemainingTime.Value}"/>
+      <Label FontSize="36" Content="秒後に撮影します"/>
+    </StackPanel>
+    <Button Grid.Row="2" Content="戻る" Width="60" Height="40" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8" Command="{Binding OkCommand}"/>
   </Grid>
 </UserControl>
