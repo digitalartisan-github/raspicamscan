@@ -40,20 +40,22 @@ import collections as cl
 #-- debug fixed value
 # 1gouki
 
-center_cam_list0 = ['059.xmp','092.xmp','045.xmp']
-center_cam_dimension0 = {'059.xmp':303, '092.xmp':222, '045.xmp':243}
+center_cam_list0 = ['091.xmp','092.xmp','093.xmp']
+center_cam_dimension0 = {'091.xmp':300, '092.xmp':265, '093.xmp':265}
 
-groud_offset0 = 25.0 # 
+groud_offset0 = 8.0 # 
 
-center_cam_list1 = ['081.xmp','092.xmp','045.xmp']
-center_cam_dimension1 = {'081.xmp':303, '092.xmp':182 ,'045.xmp':243}
+center_cam_list1 = ['091.xmp','092.xmp','093.xmp']
+center_cam_dimension1 = {'091.xmp':300, '092.xmp':265 ,'093.xmp':265}
 
-groud_offset1 = 25.0 # 
+groud_offset1 = 8.0 # 
 
 # 2gouki
-center_cam_list2 = ['013.xmp','014.xmp','015.xmp']
-center_cam_dimension2 = {'013.xmp':293, '014.xmp':254, '015.xmp':150}
-groud_offset2 = 16.0
+center_cam_list2 = ['091.xmp','092.xmp','093.xmp']
+center_cam_dimension2 = {'091.xmp':300, '092.xmp':265, '093.xmp':265}
+groud_offset2 = 8.0
+
+alternate_cam_list = {'092.xmp','09.xmp','094.xmp','095.xmp','096.xmp'}
 
 #---------------------------------------------------------------
 # 3 dimensional coordinate
@@ -362,7 +364,13 @@ class CameraPosition:
       
     key = self.center_cam_list[0]
     if key not in self.xmpMap:
-      return 0.0
+      key = ''
+      for altkey in alternate_cam_list:
+            if altkey in self.xmpMap:
+              key = altkey
+              break
+      if key == '':
+        return 0.0
     v1 = self.xmpMap[key].getPositionCoord()
     v1.subtract(origin)
     v2 = Coord3()

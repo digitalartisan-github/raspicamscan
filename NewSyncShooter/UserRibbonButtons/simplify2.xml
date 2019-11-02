@@ -1,0 +1,6 @@
+<Configuration id="{033AEF62-8421-47A4-81CB-203741113577}">
+  <entry key="simplPreserveParts" value="false"/>
+  <entry key="mvsFltMinEdgeLength" value="0.0"/>
+  <entry key="mvsFltTargetTrisCountAbs" value="200000"/>
+  <entry key="mvsFltSimplificationType" value="0"/>
+</Configuration>

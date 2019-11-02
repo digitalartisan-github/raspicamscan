@@ -1,0 +1,11 @@
+{
+  "RealityCapture":"C:\\Program Files\\Capturing Reality\\RealityCapture\\RealityCapture.exe",
+  "NormalDetail":{
+    "first_polygon_limit" : 500000,
+    "final_polygon_limit" : 20000
+  },
+  "stand_height": 780,
+  "stand_thickness":  40,
+  "export_file_format":"fbx",
+  "adjust_z0":"True"
+}

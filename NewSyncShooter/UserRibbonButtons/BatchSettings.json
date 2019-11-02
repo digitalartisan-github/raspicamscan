@@ -5,6 +5,6 @@
     "final_polygon_limit" : 200000
   },
   "stand_height": 780,
-  "stand_thickness":  20,
+  "stand_thickness":  40,
   "export_file_format":"obj"
 }

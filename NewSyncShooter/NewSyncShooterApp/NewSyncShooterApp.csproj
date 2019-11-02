@@ -35,6 +35,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Views\Images\icons8_portrait_mode_female_filled.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />
@@ -243,6 +246,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Views\Images\nui2_60px.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Views\Images\icons8_portrait_mode_female_filled.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

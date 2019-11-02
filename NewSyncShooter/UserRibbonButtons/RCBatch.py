@@ -22,6 +22,8 @@
 #                       +- 3d-image\ -+- photo_number-f.png
 #                                     +- photo_number-r.png
 #
+# V1.6.1 3
+# (1) Change -simplify parameter (RealityCapture 9696)
 # V1.6.1 2
 # (1) Change Alignment sequence
 #
@@ -336,6 +338,7 @@ class RealityCaputre:
     self.pet_stand_cut = 'auto'   # 'auto' , 'yes'  , 'no' 
     self.image_3d_creator =''
     self.image_3d_folder = ''
+    self.error_handler = ' -set "appQuitOnError=true" -set "appProcessActionTime=1" -set "appProcessAction=0" '
 
   def setup(self,photo_number,source_image,project,tmp_compornent,model,model_config,garbage_remover,pet_stand_checker):
     self.photo_number = photo_number
@@ -384,10 +387,10 @@ class RealityCaputre:
     print('sfmMaxFeaturesPerImage=' + str(sfmMaxFeaturesPerImage))
 
     BatchProc.checkInterrupted()
-    cl= '{} -set "sfmMaxFeaturesPerImage={}"'\
+    cl= '{} {} -set "sfmMaxFeaturesPerImage={}"'\
         ' -set "sfmDetectorSensitivity={}"'\
         ' -addFolder "{}"'\
-        ' -draft  -save "{}"  -quit'.format(BatchProc.RCexe,sfmMaxFeaturesPerImage,DetectorSensitivity,self.source_image_path,project_path)
+        ' -draft  -save "{}"  -quit'.format(BatchProc.RCexe,self.error_handler,sfmMaxFeaturesPerImage,DetectorSensitivity,self.source_image_path,project_path)
     print(cl)
     res = subprocess.run(cl)
 
@@ -402,19 +405,19 @@ class RealityCaputre:
 
     BatchProc.checkInterrupted()
     tmp_compornent_path = self.tmp_compornent
-    cl= '{} -set "sfmMaxFeaturesPerImage={}"'\
+    cl= '{} {} -set "sfmMaxFeaturesPerImage={}"'\
          '  -set "sfmDetectorSensitivity={}"'\
          '  -load "{}"'\
          '  -save "{}"'\
-         '  -quit'.format(BatchProc.RCexe,sfmMaxFeaturesPerImage,DetectorSensitivity,project_path,project_path)
+         '  -quit'.format(BatchProc.RCexe,self.error_handler,sfmMaxFeaturesPerImage,DetectorSensitivity,project_path,project_path)
     print(cl)
     res = subprocess.run(cl)
 
     BatchProc.checkInterrupted()
     tmp_compornent_path = self.tmp_compornent
-    cl= '{} -load "{}"'\
+    cl= '{} {} -load "{}"'\
          '  -align -selectMaximalComponent -exportComponent  "{}" -exportXmp'\
-         '  -quit'.format(BatchProc.RCexe,project_path,tmp_compornent_path)
+         '  -quit'.format(BatchProc.RCexe,self.error_handler,project_path,tmp_compornent_path)
     print(cl)
     res = subprocess.run(cl)
     compornent_list = os.listdir(self.tmp_compornent)
@@ -521,7 +524,7 @@ class RealityCaputre:
     #cl= BatchProc.RCexe +' -importComponent ' + componrnt_path + ' -setReconstructionRegion ' + self.box_path0 + ' -save ' + project_path + ' -quit'
     #cl= '{} -importComponent "{}" -setReconstructionRegion "{}" -save "{}"'\
     #    ' -quit'.format(BatchProc.RCexe,componrnt_path,self.box_path0,project_path)
-    cl= '{} -importComponent "{}" -setReconstructionRegion "{}"  -save "{}" -quit'.format(BatchProc.RCexe,componrnt_path,self.box_path0,project_path)
+    cl= '{} {} -importComponent "{}" -setReconstructionRegion "{}"  -save "{}" -quit'.format(BatchProc.RCexe,self.error_handler,componrnt_path,self.box_path0,project_path)
     print(cl)
     res = subprocess.run(cl)
     os.remove(componrnt_path_remove)
@@ -530,10 +533,11 @@ class RealityCaputre:
     # Calculate 3D mesh in normal quality
     # Simplify 1st
     BatchProc.checkInterrupted()
-    cl= '{} -load "{}" '\
+    simplfy_param = os.path.join( os.getcwd(),'simplify1.xml')
+    cl= '{} {}  -load "{}" '\
         ' -mvs -simplify {}'\
         ' -save "{}" -quit'\
-        ' '.format(BatchProc.RCexe,project_path,BatchProc.normal_first_polygpn_limit,project_path)
+        ' '.format(BatchProc.RCexe,self.error_handler,project_path,simplfy_param,project_path)
     print(cl)
     res = subprocess.run(cl)
 
@@ -542,8 +546,8 @@ class RealityCaputre:
     cam.createScaleInfo(self.model_scale_path)
 
     BatchProc.checkInterrupted()
-    cl= '{} -load "{}" '\
-        ' -exportModel "Model 2" "{}" "{}" -quit'.format(BatchProc.RCexe,project_path,model_path,self.model_config)
+    cl= '{}  {} -load "{}" '\
+        ' -exportModel "Model 2" "{}" "{}" -quit'.format(BatchProc.RCexe,self.error_handler,project_path,model_path,self.model_config)
     res = subprocess.run(cl)
 
     step_time = self.mylog.time_calc_end()
@@ -593,15 +597,16 @@ class RealityCaputre:
           RealityCaptureXmp.ReconstructRegion.createFile(cam,self.box_path0,self.box_path1,bottom)
 
           # import & re-construct
-          cl= '{} -load "{}" -setReconstructionRegion "{}"'\
+          simplfy_param = os.path.join( os.getcwd(),'simplify1.xml')
+          cl= '{} {} -load "{}" -setReconstructionRegion "{}"'\
               ' -mvs -simplify {} -renameModel "petModel" '\
               ' -save "{}" -quit'\
-              ' '.format(BatchProc.RCexe,project_path,self.box_path0,BatchProc.normal_first_polygon_limit,project_path)
+              ' '.format(BatchProc.RCexe,self.error_handler,project_path,self.box_path0,simplfy_param,project_path)
           res = subprocess.run(cl)
 
           # export mesh
-          cl= '{} -load "{}" '\
-              ' -exportModel "petModel" "{}" "{}" -quit'.format(BatchProc.RCexe,project_path,model_path,self.model_config)
+          cl= '{} {}  -load "{}" '\
+              ' -exportModel "petModel" "{}" "{}" -quit'.format(BatchProc.RCexe,self.error_handler,project_path,model_path,self.model_config)
           res = subprocess.run(cl)
           # remove garbage
           if self.remove_garbage:
@@ -617,9 +622,10 @@ class RealityCaputre:
     # 3.3 : import clean model
     #
     BatchProc.checkInterrupted()
-    cl=  '{} -load "{}" -importModel "{}" -simplify {}'\
+    simplfy_param = os.path.join( os.getcwd(),'simplify2.xml')
+    cl=  '{} {} -load "{}" -importModel "{}" -simplify {}'\
          ' -save "{}"'\
-         ' -quit'.format(BatchProc.RCexe,project_path,model_path,BatchProc.normal_final_polygpn_limit,project_path)
+         ' -quit'.format(BatchProc.RCexe,self.error_handler,project_path,model_path,simplfy_param,project_path)
     res = subprocess.run(cl)
 
     #
@@ -629,8 +635,8 @@ class RealityCaputre:
     self.mylog.time_calc_start()
 
     BatchProc.checkInterrupted()
-    cl= '{} -load "{}" -smooth  -calculateTexture -renameModel'\
-        ' "FinalModel" -save "{}" -quit'.format(BatchProc.RCexe,project_path,project_path)
+    cl= '{} {} -load "{}" -smooth  -calculateTexture -renameModel'\
+        ' "FinalModel" -save "{}" -quit'.format(BatchProc.RCexe,self.error_handler,project_path,project_path)
     res = subprocess.run(cl)
     self.mylog.logging('       smooth and texture ({})'.format(str(step_time)))
 
@@ -642,8 +648,10 @@ class RealityCaputre:
     RealityCaptureXmp.ModelOutputParameter.createParameterFile(self.model_config,True,BatchProc.export_file_format)
 
     BatchProc.checkInterrupted()
-    cl= '{} -load "{}"  -exportModel "FinalModel" "{}" "{}" '\
-        ' -quit'.format(BatchProc.RCexe,project_path,model_path,self.model_config)
+#    cl= '{} {} -load "{}"  -exportModel "FinalModel" "{}" "{}" '\
+#        ' -quit'.format(BatchProc.RCexe,self.error_handler,project_path,model_path,self.model_config)
+    cl= '{} {} -load "{}"  -save "{}" -exportModel "FinalModel" "{}" "{}" '\
+        ' -quit'.format(BatchProc.RCexe,self.error_handler,project_path,project_path,model_path,self.model_config)
     print(cl)
     res = subprocess.run(cl)
     self.mylog.logging('       export model ({})'.format(str(step_time)))

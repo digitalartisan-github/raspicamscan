@@ -9,7 +9,8 @@
               xmlns:dlg="clr-namespace:Ookii.Dialogs.Wpf;assembly=Ookii.Dialogs.Wpf"
               xmlns:cmDlg="clr-namespace:PrismCommonDialog;assembly=PrismCommonDialogLib"
               prism:ViewModelLocator.AutoWireViewModel="True"
-              Title="{Binding Title.Value}" Height="640" Width="1048">
+              Title="{Binding Title.Value}" Height="640" Width="1048"
+              Icon="Images/icons8_portrait_mode_female_filled.ico">
 
   <RibbonWindow.Resources>
     <ContextMenu x:Key="FileViewContextMenu">
