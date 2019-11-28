@@ -9,6 +9,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Net.NetworkInformation;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Timers;
 using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Interactivity.InteractionRequest;
@@ -30,6 +33,8 @@ namespace NewSyncShooterApp.ViewModels
         private NewSyncShooter.NewSyncShooter _newSyncShooter;
         private string _localHostIP = "0.0.0.0";
         private DispatcherTimer _previewingTimer;
+        private static readonly string _threeDBuildingApp = "RealityCapture.exe";
+        private readonly List<Task> _runRCTaskList = new List<Task>();
 
         #region Properties
         private readonly ObservableCollection<string> ConnectedIPAddressList;
@@ -64,6 +69,7 @@ namespace NewSyncShooterApp.ViewModels
         #endregion
 
         #region Commands
+        public ReactiveCommand ClosingCommand { get; }
         public ReactiveCommand NewProjectCommand { get; }
         public ReactiveCommand OpenFolderCommand { get; }
         public ReactiveCommand CameraConnectionCommand { get; }
@@ -182,6 +188,8 @@ namespace NewSyncShooterApp.ViewModels
             } );
 
             // Commands
+            ClosingCommand = new ReactiveCommand();
+            ClosingCommand.Subscribe( RaiseCloingCommand );
             NewProjectCommand = new ReactiveCommand();
             NewProjectCommand.Subscribe( RaiseNewProjectCommand );
             OpenFolderCommand = new ReactiveCommand();
@@ -259,6 +267,14 @@ namespace NewSyncShooterApp.ViewModels
             OpenMessageBoxRequest.Raise( notification );
 
             return notification.Result;
+        }
+
+        void RaiseCloingCommand()
+        {
+            if ( _runRCTaskList.Count > 0) {
+                OpenMessageBox( this.Title.Value, MessageBoxImage.Warning, MessageBoxButton.OK, MessageBoxResult.OK,
+                        "Reality Capture はまだ実行中です。" );
+            }
         }
 
         /// <summary>
@@ -807,14 +823,19 @@ namespace NewSyncShooterApp.ViewModels
                 } else {
                     directories = directories
                                 .Select( dir => Path.GetFileName( dir ).ToUpper() )
-                                .Where( dir => dir.StartsWith( "AUTO" ) ).ToArray();
+                                .Where( dir => dir.StartsWith( "AUTO(" ) ).ToArray();
                     if ( directories.Length == 0 ) {
                         nMaxIndex = 0;
                     } else {
-                        nMaxIndex = directories.Max( dir => int.Parse( dir.Remove( 0, 4 ) ) );
+                        nMaxIndex = directories.Max( dir =>
+                        {
+                            string sName = dir.Remove(0, 5);
+                            sName = sName.Remove(sName.Length - 1);
+                            return int.Parse(sName);
+                        });
                     }
                 }
-                string sTargetName = String.Format("Auto{0:0000}", nMaxIndex + 1);
+                string sTargetName = String.Format("Auto({0:0000})", nMaxIndex + 1);
                 string sTargetDir = Path.Combine( this.ProjectFolderPath.Value, sTargetName );
                 Directory.CreateDirectory( sTargetDir );
 
@@ -833,9 +854,106 @@ namespace NewSyncShooterApp.ViewModels
                 FileTree.Clear();
                 FileTree.Add( new FileTreeItem( this.ProjectFolderPath.Value ) );
 
+                // 3D Dataを置くディレクトリを作る
+                string sThreeDDataDir = Path.Combine(this.ThreeDDataFolderPath.Value, sTargetName);
+                Directory.CreateDirectory( sThreeDDataDir );
+
+                // 3D化(RC実行)タスクを実行
+                var task = new Task( () => RunRCTask( sTargetDir, sThreeDDataDir, this.IsCutPetTable.Value) );
+                task.ContinueWith( t => _runRCTaskList.Remove( t ) );
+                _runRCTaskList.Add( task );
+                task.Start();
+
             } catch ( Exception e ) {
                 OpenMessageBox( this.Title.Value, MessageBoxImage.Error, MessageBoxButton.OK, MessageBoxResult.OK, e.Message );
             }
+        }
+
+        /// <summary>
+        /// RealityCapture 実行タスク
+        /// </summary>
+        /// <param name="sOutputDir"></param>
+        static void RunRCTask(string sImageDir, string sThreeDDataDir, bool isCutPetTable )
+        {
+#if true
+            // アプリケーションが実行中の間は待つ
+            ManualResetEvent waiting = new ManualResetEvent(false);
+            waiting.Reset();
+
+            string sRcBatchLockPath = Path.Combine(Path.GetTempPath(), "_rc_bacth_lock)";
+
+            // 一定時間間隔で RC が起動しているかどうかを RCが存在しなくなるまで調べる
+            var timer = new System.Timers.Timer(5000);
+            timer.Elapsed += (sender, e) =>
+            {
+                
+                ProcessStartInfo psInfo = new ProcessStartInfo();
+                psInfo.FileName = @"c:\windows\system32\tasklist.exe";
+                psInfo.Arguments = string.Format("/fi \"imagename eq {0}\" /nh", _threeDBuildingApp);
+                psInfo.CreateNoWindow = true; // コンソール・ウィンドウを開かない
+                psInfo.UseShellExecute = false; // シェル機能を使用しない
+                psInfo.RedirectStandardOutput = true; // 標準出力をリダイレクト
+                Process p = Process.Start(psInfo); // アプリの実行開始
+                string output = p.StandardOutput.ReadToEnd(); // 標準出力の読み取り
+                Debug.WriteLine(output);
+                if (!output.Contains(_threeDBuildingApp))
+                {
+                    timer.Stop();
+                    waiting.Set();
+                }
+            };
+            timer.Start();
+            waiting.WaitOne();
+
+            // 3D化実行
+            var startInfo = new ProcessStartInfo();
+            startInfo.FileName = "cmd.exe";
+            startInfo.WorkingDirectory = @".\UserRibbonButtons";
+            startInfo.Arguments = "/c ";
+            startInfo.Arguments += @".\button1.bat ";
+            var argString = "\"" + sImageDir + "\" " +
+                            "\"" + sThreeDDataDir + "\" " +
+                            (isCutPetTable ? "yes" : "no");
+            startInfo.Arguments += argString;
+            var proc = Process.Start(startInfo);
+#else
+            // アプリケーションが実行中の間は待つ
+            ManualResetEvent waiting = new ManualResetEvent(false);
+            waiting.Reset();
+
+            // 一定時間間隔で RC が起動しているかどうかを RCが存在しなくなるまで調べる
+            var timer = new System.Timers.Timer(5000);
+            timer.Elapsed += ( sender, e ) =>
+            {
+                ProcessStartInfo psInfo = new ProcessStartInfo();
+                psInfo.FileName = @"c:\windows\system32\tasklist.exe";
+                psInfo.Arguments = string.Format( "/fi \"imagename eq {0}\" /nh", _threeDBuildingApp );
+                psInfo.CreateNoWindow = true; // コンソール・ウィンドウを開かない
+                psInfo.UseShellExecute = false; // シェル機能を使用しない
+                psInfo.RedirectStandardOutput = true; // 標準出力をリダイレクト
+                Process p = Process.Start(psInfo); // アプリの実行開始
+                string output = p.StandardOutput.ReadToEnd(); // 標準出力の読み取り
+                Debug.WriteLine( output );
+                if ( !output.Contains( _threeDBuildingApp ) ) {
+                    timer.Stop();
+                    waiting.Set();
+                }
+            };
+            timer.Start();
+            waiting.WaitOne();
+
+            // 3D化実行
+            var startInfo = new ProcessStartInfo();
+            startInfo.FileName = "cmd.exe";
+            startInfo.WorkingDirectory = @".\UserRibbonButtons";
+            startInfo.Arguments = "/c ";
+            startInfo.Arguments += @".\button1.bat ";
+            var argString = "\"" + sImageDir + "\" " +
+                            "\"" + sThreeDDataDir + "\" " +
+                            (isCutPetTable ? "yes" : "no");
+            startInfo.Arguments += argString;
+            var proc = Process.Start(startInfo);
+#endif
         }
 
     }

@@ -35,6 +35,10 @@
   </RibbonWindow.Resources>
 
   <i:Interaction.Triggers>
+    <i:EventTrigger EventName="Closing">
+      <i:InvokeCommandAction Command="{Binding ClosingCommand}" />
+    </i:EventTrigger>
+
     <prism:InteractionRequestTrigger SourceObject="{Binding OpenFolderRequest}">
       <cmDlg:PopupCommonDialogAction CommonDialogType="{x:Type dlg:VistaFolderBrowserDialog}" />
     </prism:InteractionRequestTrigger>
