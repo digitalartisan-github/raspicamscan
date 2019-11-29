@@ -830,9 +830,9 @@ namespace NewSyncShooterApp.ViewModels
                         nMaxIndex = directories.Max( dir =>
                         {
                             string sName = dir.Remove(0, 5);
-                            sName = sName.Remove(sName.Length - 1);
-                            return int.Parse(sName);
-                        });
+                            sName = sName.Remove( sName.Length - 1 );
+                            return int.Parse( sName );
+                        } );
                     }
                 }
                 string sTargetName = String.Format("Auto({0:0000})", nMaxIndex + 1);
@@ -873,31 +873,21 @@ namespace NewSyncShooterApp.ViewModels
         /// RealityCapture 実行タスク
         /// </summary>
         /// <param name="sOutputDir"></param>
-        static void RunRCTask(string sImageDir, string sThreeDDataDir, bool isCutPetTable )
+        static void RunRCTask( string sImageDir, string sThreeDDataDir, bool isCutPetTable )
         {
 #if true
             // アプリケーションが実行中の間は待つ
             ManualResetEvent waiting = new ManualResetEvent(false);
             waiting.Reset();
 
-            string sRcBatchLockPath = Path.Combine(Path.GetTempPath(), "_rc_bacth_lock)";
+            // RC起動中を示すファイル
+            string sRcBatchLockPath = Path.Combine(Path.GetTempPath(), "_rc_bacth_lock");
 
-            // 一定時間間隔で RC が起動しているかどうかを RCが存在しなくなるまで調べる
+            // 一定時間間隔で RC起動中を示すファイルの存在をしらべ、存在しなくなるまで待つ
             var timer = new System.Timers.Timer(5000);
-            timer.Elapsed += (sender, e) =>
+            timer.Elapsed += ( sender, e ) =>
             {
-                
-                ProcessStartInfo psInfo = new ProcessStartInfo();
-                psInfo.FileName = @"c:\windows\system32\tasklist.exe";
-                psInfo.Arguments = string.Format("/fi \"imagename eq {0}\" /nh", _threeDBuildingApp);
-                psInfo.CreateNoWindow = true; // コンソール・ウィンドウを開かない
-                psInfo.UseShellExecute = false; // シェル機能を使用しない
-                psInfo.RedirectStandardOutput = true; // 標準出力をリダイレクト
-                Process p = Process.Start(psInfo); // アプリの実行開始
-                string output = p.StandardOutput.ReadToEnd(); // 標準出力の読み取り
-                Debug.WriteLine(output);
-                if (!output.Contains(_threeDBuildingApp))
-                {
+                if ( !File.Exists( sRcBatchLockPath ) ) {
                     timer.Stop();
                     waiting.Set();
                 }
