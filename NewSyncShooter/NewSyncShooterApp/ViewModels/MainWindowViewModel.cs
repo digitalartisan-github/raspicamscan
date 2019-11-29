@@ -33,8 +33,8 @@ namespace NewSyncShooterApp.ViewModels
         private NewSyncShooter.NewSyncShooter _newSyncShooter;
         private string _localHostIP = "0.0.0.0";
         private DispatcherTimer _previewingTimer;
-        private static readonly string _threeDBuildingApp = "RealityCapture.exe";
-        private readonly List<Task> _runRCTaskList = new List<Task>();
+        //private static readonly string _threeDBuildingApp = "RealityCapture.exe";
+        private static List<Tuple<Task,string>> _runRCTaskList = new List<Tuple<Task,string>>();
 
         #region Properties
         private readonly ObservableCollection<string> ConnectedIPAddressList;
@@ -860,8 +860,9 @@ namespace NewSyncShooterApp.ViewModels
 
                 // 3D化(RC実行)タスクを実行
                 var task = new Task( () => RunRCTask( sTargetDir, sThreeDDataDir, this.IsCutPetTable.Value) );
-                task.ContinueWith( t => _runRCTaskList.Remove( t ) );
-                _runRCTaskList.Add( task );
+                var pair = new Tuple<Task, string>( task, sTargetDir );
+                task.ContinueWith( t => _runRCTaskList.Remove( pair ) );
+                _runRCTaskList.Add( pair );
                 task.Start();
 
             } catch ( Exception e ) {
@@ -887,9 +888,13 @@ namespace NewSyncShooterApp.ViewModels
             var timer = new System.Timers.Timer(5000);
             timer.Elapsed += ( sender, e ) =>
             {
-                if ( !File.Exists( sRcBatchLockPath ) ) {
-                    timer.Stop();
-                    waiting.Set();
+                // 先着順となるように、このリストの先頭が、このタスクである場合のみ調べる
+                var headTask = _runRCTaskList.First();
+                if ( headTask.Item2 == sImageDir ) {
+                    if ( !File.Exists( sRcBatchLockPath ) ) {
+                        timer.Stop();
+                        waiting.Set();
+                    }
                 }
             };
             timer.Start();
